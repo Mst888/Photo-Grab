@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Image Grabber Pro",
+  "version": "1.0.0",
+  "description": "Select multiple images on web pages and download them together",
+  "permissions": ["activeTab", "storage", "downloads"],
+  "host_permissions": ["<all_urls>"],
+  "icons": {
+    "128": "icon.svg"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["style.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Image Grabber Pro",
+    "default_icon": {
+      "128": "icon.svg"
+    }
+  }
+}

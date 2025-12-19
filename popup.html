@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Image Grabber Pro</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="ibd-popup">
+    <div class="ibd-card">
+      <div class="ibd-header">
+        <div class="ibd-title"><img class="ibd-logo" src="icon.svg" alt="" />Image Grabber Pro</div>
+        <div class="ibd-subtitle">Select images on the page, then download.</div>
+      </div>
+
+      <div class="ibd-toggle">
+        <div>
+          <div class="ibd-toggle-title">Selection mode</div>
+          <div class="ibd-toggle-subtitle">Turn on to select images on the current tab</div>
+        </div>
+        <label class="ibd-switch">
+          <input id="enabledToggle" type="checkbox" />
+          <span class="ibd-slider"></span>
+        </label>
+      </div>
+
+      <div class="ibd-stat">
+        <div class="ibd-stat-label">Selected images</div>
+        <div class="ibd-stat-value" id="selectedCount">0</div>
+      </div>
+
+      <div class="ibd-field">
+        <label class="ibd-label" for="quality">JPEG quality</label>
+        <div class="ibd-quality-row">
+          <input id="quality" type="range" min="10" max="100" step="1" value="90" />
+          <div class="ibd-quality-value"><span id="qualityValue">90</span>%</div>
+        </div>
+      </div>
+
+      <div class="ibd-field">
+        <label class="ibd-label" for="downloadLocation">Download location</label>
+        <div class="ibd-location-row">
+          <select id="downloadLocation" class="ibd-select">
+            <option value="default">Default download folder</option>
+            <option value="ask">Ask where to save each time</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ibd-actions">
+        <button id="downloadBtn" class="ibd-btn ibd-btn-primary" type="button">Download Selected</button>
+        <button id="clearBtn" class="ibd-btn ibd-btn-ghost" type="button">Clear Selection</button>
+      </div>
+
+      <div class="ibd-status" id="status" aria-live="polite"></div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
