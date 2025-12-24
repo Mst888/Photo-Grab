@@ -9,6 +9,8 @@
   // New keys
   const FORMAT_KEY = 'ibd_outputFormat_v1';
   const FOLDER_KEY = 'ibd_folderName_v1';
+  const USE_SUBFOLDER_KEY = 'ibd_useSubfolder_v1';
+  const ASK_LOCATION_KEY = 'ibd_askLocation_v1';
   const LOW_PERF_KEY = 'ibd_lowPerf_v1';
   const PREVIEW_KEY = 'ibd_previews_v1';
   const OVERLAY_KEY = 'ibd_overlays_v1';
@@ -24,11 +26,13 @@
   const qualityEl = document.getElementById('quality');
   const qualityValueEl = document.getElementById('qualityValue');
   const qualityFieldEl = document.getElementById('qualityField');
-  const downloadLocationEl = document.getElementById('downloadLocation');
   const enabledToggleEl = document.getElementById('enabledToggle');
 
-  // New elements
+  // Revised elements
   const outputFormatEl = document.getElementById('outputFormat');
+  const askLocationToggleEl = document.getElementById('askLocationToggle');
+  const useSubfolderToggleEl = document.getElementById('useSubfolderToggle');
+  const subfolderFieldEl = document.getElementById('subfolderField');
   const folderNameEl = document.getElementById('folderName');
   const lowPerfToggleEl = document.getElementById('lowPerfToggle');
   const previewToggleEl = document.getElementById('previewToggle');
@@ -64,8 +68,9 @@
 
   async function loadSettings() {
     const stored = await api.storage.local.get([
-      ENABLED_KEY, QUALITY_KEY, LOCATION_KEY, FORMAT_KEY,
-      FOLDER_KEY, LOW_PERF_KEY, PREVIEW_KEY, OVERLAY_KEY,
+      ENABLED_KEY, QUALITY_KEY, FORMAT_KEY,
+      FOLDER_KEY, USE_SUBFOLDER_KEY, ASK_LOCATION_KEY,
+      LOW_PERF_KEY, PREVIEW_KEY, OVERLAY_KEY,
       BATCH_SIZE_KEY, DELAY_KEY, MAX_SELECT_KEY, LAZY_KEY
     ]);
 
@@ -75,8 +80,10 @@
     qualityEl.value = String(q);
     qualityValueEl.textContent = String(q);
 
-    downloadLocationEl.value = stored[LOCATION_KEY] || 'default';
     outputFormatEl.value = stored[FORMAT_KEY] || 'original';
+
+    askLocationToggleEl.checked = Boolean(stored[ASK_LOCATION_KEY] ?? false);
+    useSubfolderToggleEl.checked = Boolean(stored[USE_SUBFOLDER_KEY] ?? false);
     folderNameEl.value = stored[FOLDER_KEY] || '';
 
     lowPerfToggleEl.checked = Boolean(stored[LOW_PERF_KEY] ?? false);
@@ -88,12 +95,17 @@
     maxSelectionEl.value = stored[MAX_SELECT_KEY] ?? 50;
     lazyProcessToggleEl.checked = Boolean(stored[LAZY_KEY] ?? false);
 
+    updateLocationVisibility();
     updateQualityVisibility();
   }
 
   function updateQualityVisibility() {
     const format = outputFormatEl.value;
     qualityFieldEl.style.display = (format === 'jpeg' || format === 'webp') ? 'block' : 'none';
+  }
+
+  function updateLocationVisibility() {
+    subfolderFieldEl.style.display = useSubfolderToggleEl.checked ? 'block' : 'none';
   }
 
   async function saveSetting(key, value) {
@@ -117,25 +129,27 @@
     }
 
     const settings = await api.storage.local.get([
-      QUALITY_KEY, LOCATION_KEY, FORMAT_KEY, FOLDER_KEY,
-      BATCH_SIZE_KEY, DELAY_KEY, LAZY_KEY
+      QUALITY_KEY, FORMAT_KEY, FOLDER_KEY, USE_SUBFOLDER_KEY, ASK_LOCATION_KEY,
+      BATCH_SIZE_KEY, DELAY_KEY, LAZY_KEY, LOW_PERF_KEY
     ]);
 
     setStatus('Preparing downloads...');
 
+    const payload = {
+      urls: selection,
+      quality: clampQuality(settings[QUALITY_KEY] ?? 90),
+      downloadLocation: settings[ASK_LOCATION_KEY] ? 'ask' : 'default',
+      format: settings[FORMAT_KEY] || 'original',
+      folderName: settings[USE_SUBFOLDER_KEY] ? (settings[FOLDER_KEY] || '') : '',
+      batchSize: Number(settings[BATCH_SIZE_KEY] || 5),
+      downloadDelay: Number(settings[DELAY_KEY] || 100),
+      lazy: Boolean(settings[LAZY_KEY]),
+      lowPerf: Boolean(settings[LOW_PERF_KEY])
+    };
+
     const response = await api.runtime.sendMessage({
       type: 'IBD_DOWNLOAD_SELECTED',
-      payload: {
-        urls: selection,
-        quality: clampQuality(settings[QUALITY_KEY] ?? 90),
-        downloadLocation: settings[LOCATION_KEY] || 'default',
-        format: settings[FORMAT_KEY] || 'original',
-        folderName: settings[FOLDER_KEY] || '',
-        batchSize: Number(settings[BATCH_SIZE_KEY] || 5),
-        downloadDelay: Number(settings[DELAY_KEY] || 100),
-        lazy: Boolean(settings[LAZY_KEY]),
-        lowPerf: !!settings[LOW_PERF_KEY]
-      },
+      payload: payload,
     });
 
     if (response && response.ok) {
@@ -161,10 +175,14 @@
   });
 
   qualityEl.addEventListener('change', () => saveSetting(QUALITY_KEY, clampQuality(qualityEl.value)));
-  downloadLocationEl.addEventListener('change', () => saveSetting(LOCATION_KEY, downloadLocationEl.value));
   outputFormatEl.addEventListener('change', () => {
     saveSetting(FORMAT_KEY, outputFormatEl.value);
     updateQualityVisibility();
+  });
+  askLocationToggleEl.addEventListener('change', () => saveSetting(ASK_LOCATION_KEY, askLocationToggleEl.checked));
+  useSubfolderToggleEl.addEventListener('change', () => {
+    saveSetting(USE_SUBFOLDER_KEY, useSubfolderToggleEl.checked);
+    updateLocationVisibility();
   });
   folderNameEl.addEventListener('input', () => saveSetting(FOLDER_KEY, folderNameEl.value));
 
