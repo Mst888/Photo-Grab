@@ -23,6 +23,10 @@
   const NAMING_KEY = 'ibd_namingMode_v1';
   const TEMPLATE_KEY = 'ibd_customTemplate_v1';
   const ZIP_KEY = 'ibd_zipEnabled_v1';
+  const ASPECT_RATIO_KEY = 'ibd_aspectRatio_v1';
+  const CUSTOM_RATIO_W_KEY = 'ibd_customRatioW_v1';
+  const CUSTOM_RATIO_H_KEY = 'ibd_customRatioH_v1';
+  const CROP_MODE_KEY = 'ibd_cropMode_v1';
   const inFlight = new Set();
   const DEFAULT_FETCH_TIMEOUT_MS = 25000;
 
@@ -66,16 +70,65 @@
     } finally { clearTimeout(timeout); }
   }
 
-  async function convertToFormat(blob, format, qualityPercent) {
-    if (format === 'original') return blob;
+  async function convertToFormat(blob, format, qualityPercent, aspectRatio, cropMode, customW, customH) {
+    if (format === 'original' && aspectRatio === 'original') return blob;
     const quality = (qualityPercent || 90) / 100;
     const mimeType = `image/${format === 'jpg' ? 'jpeg' : format}`;
     let bitmap;
     try {
       bitmap = await createImageBitmap(blob);
-      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      let targetW = bitmap.width;
+      let targetH = bitmap.height;
+
+      if (aspectRatio && aspectRatio !== 'original') {
+        let ratioW, ratioH;
+        if (aspectRatio === '1:1') { ratioW = 1; ratioH = 1; }
+        else if (aspectRatio === '4:3') { ratioW = 4; ratioH = 3; }
+        else if (aspectRatio === '16:9') { ratioW = 16; ratioH = 9; }
+        else if (aspectRatio === 'custom') { ratioW = customW || 1; ratioH = customH || 1; }
+
+        if (ratioW && ratioH) {
+          const currentRatio = bitmap.width / bitmap.height;
+          const targetRatio = ratioW / ratioH;
+
+          if (cropMode === 'fit') {
+            if (currentRatio > targetRatio) {
+              targetH = bitmap.width / targetRatio;
+            } else {
+              targetW = bitmap.height * targetRatio;
+            }
+          } else { // 'fill' (Center Crop)
+            if (currentRatio > targetRatio) {
+              targetW = bitmap.height * targetRatio;
+            } else {
+              targetH = bitmap.width / targetRatio;
+            }
+          }
+        }
+      }
+
+      const canvas = new OffscreenCanvas(targetW, targetH);
       const ctx = canvas.getContext('2d', { alpha: format !== 'jpeg' });
-      ctx.drawImage(bitmap, 0, 0);
+
+      if (aspectRatio && aspectRatio !== 'original' && cropMode === 'fill') {
+        const sourceW = targetW;
+        const sourceH = targetH;
+        const offsetX = (bitmap.width - sourceW) / 2;
+        const offsetY = (bitmap.height - sourceH) / 2;
+        ctx.drawImage(bitmap, offsetX, offsetY, sourceW, sourceH, 0, 0, targetW, targetH);
+      } else if (aspectRatio && aspectRatio !== 'original' && cropMode === 'fit') {
+        ctx.fillStyle = (format === 'jpeg') ? '#ffffff' : 'rgba(0,0,0,0)';
+        ctx.fillRect(0, 0, targetW, targetH);
+        const scale = Math.min(targetW / bitmap.width, targetH / bitmap.height);
+        const drawW = bitmap.width * scale;
+        const drawH = bitmap.height * scale;
+        const drawX = (targetW - drawW) / 2;
+        const drawY = (targetH - drawH) / 2;
+        ctx.drawImage(bitmap, drawX, drawY, drawW, drawH);
+      } else {
+        ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+      }
+
       const outBlob = await canvas.convertToBlob({
         type: mimeType,
         quality: (format === 'jpeg' || format === 'webp') ? quality : undefined
@@ -97,6 +150,10 @@
       namingMode = 'auto',
       customTemplate = '',
       zipBundle = false,
+      aspectRatio = 'original',
+      cropMode = 'fill',
+      customRatioW = 1,
+      customRatioH = 1,
       pageTitle = 'Images',
       site = 'any'
     } = payload;
@@ -120,7 +177,7 @@
           const url = uniqueUrls[i];
           try {
             const blob = await fetchAsBlob(url);
-            const processed = await convertToFormat(blob, format, finalQuality);
+            const processed = await convertToFormat(blob, format, finalQuality, aspectRatio, cropMode, customRatioW, customRatioH);
             const ext = format === 'original' ? (url.split('.').pop().split(/[?#]/)[0] || 'jpg') : (format === 'jpeg' ? 'jpg' : format);
             const filename = generateFilename({ namingMode, customTemplate, format }, i, pageTitle, site, ext);
             zip.file(filename, processed);
@@ -143,7 +200,7 @@
             const globalIdx = i + idx;
             try {
               const blob = await fetchAsBlob(url);
-              const processed = await convertToFormat(blob, format, finalQuality);
+              const processed = await convertToFormat(blob, format, finalQuality, aspectRatio, cropMode, customRatioW, customRatioH);
               const ext = format === 'original' ? (url.split('.').pop().split(/[?#]/)[0] || 'jpg') : (format === 'jpeg' ? 'jpg' : format);
               const filename = generateFilename({ namingMode, customTemplate, format }, globalIdx, pageTitle, site, ext);
 
@@ -184,7 +241,8 @@
       (async () => {
         const stored = await api.storage.local.get([
           STORAGE_KEY, QUALITY_KEY, FORMAT_KEY, FOLDER_KEY, USE_SUBFOLDER_KEY, ASK_LOCATION_KEY,
-          BATCH_SIZE_KEY, DELAY_KEY, LAZY_KEY, LOW_PERF_KEY, NAMING_KEY, TEMPLATE_KEY, ZIP_KEY
+          BATCH_SIZE_KEY, DELAY_KEY, LAZY_KEY, LOW_PERF_KEY, NAMING_KEY, TEMPLATE_KEY, ZIP_KEY,
+          ASPECT_RATIO_KEY, CUSTOM_RATIO_W_KEY, CUSTOM_RATIO_H_KEY, CROP_MODE_KEY
         ]);
 
         const selection = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
@@ -206,6 +264,10 @@
           namingMode: stored[NAMING_KEY] || 'auto',
           customTemplate: stored[TEMPLATE_KEY] || '',
           zipBundle: !!stored[ZIP_KEY],
+          aspectRatio: stored[ASPECT_RATIO_KEY] || 'original',
+          cropMode: stored[CROP_MODE_KEY] || 'fill',
+          customRatioW: Number(stored[CUSTOM_RATIO_W_KEY] || 1),
+          customRatioH: Number(stored[CUSTOM_RATIO_H_KEY] || 1),
           pageTitle,
           site
         };

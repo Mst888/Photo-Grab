@@ -685,6 +685,78 @@ img[data-ibd-selected] {
   color: var(--ibd-text-main);
 }
 
+/* Upgrade Styles */
+.ibd-selection-rect {
+  position: fixed;
+  border: 1px solid var(--ibd-primary);
+  background: rgba(79, 70, 229, 0.15);
+  pointer-events: none;
+  z-index: 2147483647;
+}
+
+.ibd-preview-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--ibd-border);
+  border-radius: var(--ibd-border-radius-md);
+  background: var(--ibd-bg-stat);
+}
+
+.ibd-thumb-container {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ibd-border-radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid var(--ibd-border);
+  transition: transform 0.1s, border-color 0.1s;
+}
+
+.ibd-thumb-container:hover {
+  transform: scale(1.05);
+  border-color: var(--ibd-primary);
+}
+
+.ibd-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ibd-thumb-remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s;
+  font-weight: bold;
+}
+
+.ibd-thumb-container:hover .ibd-thumb-remove {
+  opacity: 1;
+}
+
+.ibd-status-msg {
+  font-size: 11px;
+  color: var(--ibd-text-muted);
+  font-style: italic;
+  margin-top: 4px;
+}
+
 .ibd-input-mini {
   width: 100%;
   padding: 4px 6px;
