@@ -12,6 +12,18 @@
   const MODE_KEY = 'ibd_selectionMode_v1';
   const BADGE_ATTR = 'data-ibd-badge';
   const TOOLBAR_ID = 'ibd-toolbar-v1';
+  const SHORTCUTS_ENABLED_KEY = 'ibd_shortcutsEnabled_v1';
+  const SHORTCUTS_DATA_KEY = 'ibd_shortcutsData_v1';
+
+  const DEFAULT_SHORTCUTS = {
+    toggleSelection: { key: 's', alt: true, ctrl: false, shift: false },
+    selectAll: { key: 'a', alt: true, ctrl: false, shift: false },
+    clearSelection: { key: 'c', alt: true, ctrl: false, shift: false },
+    download: { key: 'd', alt: true, ctrl: false, shift: false },
+    downloadZip: { key: 'z', alt: true, ctrl: false, shift: false },
+    togglePreview: { key: 'p', alt: true, ctrl: false, shift: false },
+    toggleLowPerf: { key: 'l', alt: true, ctrl: false, shift: false }
+  };
 
   let settingsCache = {
     enabled: false,
@@ -20,7 +32,11 @@
     overlays: true,
     maxSelection: 50,
     theme: 'light',
-    mode: 'normal'
+    maxSelection: 50,
+    theme: 'light',
+    mode: 'normal',
+    shortcutsEnabled: true,
+    shortcuts: { ...DEFAULT_SHORTCUTS }
   };
 
   let areaRect = null;
@@ -360,12 +376,91 @@
       const current = await getSelection();
       await setSelection([...current, ...toSelect]);
       syncHighlights();
+      syncHighlights();
       sendResponse({ ok: true });
     }
   });
 
+  // --- SHORTCUTS EXECUTION ---
+  async function executeAction(action) {
+    if (!settingsCache.shortcutsEnabled) return;
+
+    switch (action) {
+      case 'toggleSelection':
+        await api.storage.local.set({ [ENABLED_KEY]: !settingsCache.enabled });
+        break;
+      case 'selectAll':
+        if (!settingsCache.enabled) return;
+        const imgs = document.querySelectorAll('img');
+        const toSelect = [];
+        imgs.forEach(img => {
+          const url = getCandidateImgUrl(img);
+          const w = img.naturalWidth || img.width;
+          const h = img.naturalHeight || img.height;
+          if (url && w >= 32 && h >= 32) toSelect.push(url);
+        });
+        const current = await getSelection();
+        await setSelection([...current, ...toSelect]);
+        syncHighlights();
+        break;
+      case 'clearSelection':
+        if (!settingsCache.enabled) return;
+        await setSelection([]);
+        syncHighlights();
+        break;
+      case 'download':
+        if (!settingsCache.enabled) return;
+        api.runtime.sendMessage({ type: 'IBD_DOWNLOAD_REQUEST_FROM_PAGE' }, (res) => {
+          if (res && !res.ok) alert('Photo-Grab: ' + (res.error || 'Download failed'));
+        });
+        break;
+      case 'downloadZip':
+        if (!settingsCache.enabled) return;
+        // Check if ZIP is enabled, if not enable it temporarily or just trigger download
+        // For now, trigger standard download request which respects popup settings (but popup is closed)
+        // Ideally we would toggle the ZIP setting in storage then request download
+        const zipKey = 'ibd_zipEnabled_v1';
+        await api.storage.local.set({ [zipKey]: true });
+        api.runtime.sendMessage({ type: 'IBD_DOWNLOAD_REQUEST_FROM_PAGE' }, (res) => {
+          if (res && !res.ok) alert('Photo-Grab: ' + (res.error || 'ZIP Download failed'));
+        });
+        break;
+      case 'toggleLowPerf':
+        await api.storage.local.set({ [LOW_PERF_KEY]: !settingsCache.lowPerf });
+        break;
+      case 'togglePreview':
+        // This is a popup-only setting mostly, but we can toggle it in storage
+        const previewKey = 'ibd_previews_v1';
+        await api.storage.local.set({ [previewKey]: !settingsCache.previews });
+        break;
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (!settingsCache.shortcutsEnabled) return;
+
+    // Ignore if typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+
+    const shortcuts = settingsCache.shortcuts || DEFAULT_SHORTCUTS;
+    for (const [action, data] of Object.entries(shortcuts)) {
+      if (e.key.toLowerCase() === data.key &&
+        e.ctrlKey === !!data.ctrl &&
+        e.altKey === !!data.alt &&
+        e.shiftKey === !!data.shift) {
+
+        e.preventDefault();
+        executeAction(action);
+        break;
+      }
+    }
+  });
+
   async function init() {
-    const stored = await api.storage.local.get([ENABLED_KEY, LOW_PERF_KEY, PREVIEW_KEY, OVERLAY_KEY, MAX_SELECT_KEY, THEME_KEY, MODE_KEY]);
+    const stored = await api.storage.local.get([
+      ENABLED_KEY, LOW_PERF_KEY, PREVIEW_KEY, OVERLAY_KEY, MAX_SELECT_KEY, THEME_KEY, MODE_KEY,
+      SHORTCUTS_ENABLED_KEY, SHORTCUTS_DATA_KEY
+    ]);
     settingsCache = {
       enabled: !!stored[ENABLED_KEY],
       lowPerf: !!stored[LOW_PERF_KEY],
@@ -373,7 +468,9 @@
       overlays: stored[OVERLAY_KEY] !== false,
       maxSelection: stored[MAX_SELECT_KEY] || 50,
       theme: stored[THEME_KEY] || 'light',
-      mode: stored[MODE_KEY] || 'normal'
+      mode: stored[MODE_KEY] || 'normal',
+      shortcutsEnabled: stored[SHORTCUTS_ENABLED_KEY] !== false,
+      shortcuts: stored[SHORTCUTS_DATA_KEY] || { ...DEFAULT_SHORTCUTS }
     };
     if (settingsCache.enabled) { ensureToolbar(); syncHighlights(); updateModeListeners(); }
   }
@@ -383,6 +480,8 @@
     let needsSync = false;
     if (changes[ENABLED_KEY]) { settingsCache.enabled = !!changes[ENABLED_KEY].newValue; updateModeListeners(); needsSync = true; }
     if (changes[MODE_KEY]) { settingsCache.mode = changes[MODE_KEY].newValue || 'normal'; updateModeListeners(); needsSync = true; }
+    if (changes[SHORTCUTS_ENABLED_KEY]) { settingsCache.shortcutsEnabled = changes[SHORTCUTS_ENABLED_KEY].newValue !== false; }
+    if (changes[SHORTCUTS_DATA_KEY]) { settingsCache.shortcuts = changes[SHORTCUTS_DATA_KEY].newValue || { ...DEFAULT_SHORTCUTS }; }
     if (changes[LOW_PERF_KEY]) { settingsCache.lowPerf = !!changes[LOW_PERF_KEY].newValue; needsSync = true; }
     if (changes[THEME_KEY]) {
       settingsCache.theme = changes[THEME_KEY].newValue || 'light';
