@@ -194,6 +194,7 @@
   function onMouseDown(e) {
     if (!settingsCache.enabled || settingsCache.mode !== 'area') return;
     if (e.button !== 0 || e.target.closest(`[data-ibd-ui="1"], #${TOOLBAR_ID}`)) return;
+    e.preventDefault();
     isDragging = true;
     dragStart = { x: e.clientX, y: e.clientY };
     if (!areaRect) {
@@ -220,7 +221,19 @@
     const toSelect = [];
     imgs.forEach(img => {
       const imgRect = img.getBoundingClientRect();
-      if (imgRect.left >= rect.left && imgRect.right <= rect.right && imgRect.top >= rect.top && imgRect.bottom <= rect.bottom) {
+
+      // Filter out small logos/icons (e.g., < 32x32)
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      if (w < 32 || h < 32) return;
+
+      // Intersection check
+      const overlaps = !(imgRect.right < rect.left ||
+        imgRect.left > rect.right ||
+        imgRect.bottom < rect.top ||
+        imgRect.top > rect.bottom);
+
+      if (overlaps) {
         const url = getCandidateImgUrl(img);
         if (url) toSelect.push(url);
       }

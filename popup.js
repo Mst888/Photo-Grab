@@ -23,6 +23,10 @@
   const NAMING_KEY = 'ibd_namingMode_v1';
   const ZIP_KEY = 'ibd_zipEnabled_v1';
   const TEMPLATE_KEY = 'ibd_customTemplate_v1';
+  const ASPECT_RATIO_KEY = 'ibd_aspectRatio_v1';
+  const CUSTOM_RATIO_W_KEY = 'ibd_customRatioW_v1';
+  const CUSTOM_RATIO_H_KEY = 'ibd_customRatioH_v1';
+  const CROP_MODE_KEY = 'ibd_cropMode_v1';
 
   const selectedCountEl = document.getElementById('selectedCount');
   const downloadBtn = document.getElementById('downloadBtn');
@@ -54,6 +58,12 @@
   const customNameField = document.getElementById('customNameField');
   const customTemplateEl = document.getElementById('customTemplate');
   const zipDownloadToggleEl = document.getElementById('zipDownloadToggle');
+  const aspectRatioEl = document.getElementById('aspectRatio');
+  const customRatioField = document.getElementById('customRatioField');
+  const customRatioWEl = document.getElementById('customRatioW');
+  const customRatioHEl = document.getElementById('customRatioH');
+  const cropModeField = document.getElementById('cropModeField');
+  const cropModeEl = document.getElementById('cropMode');
 
   function setStatus(text, isError) {
     statusEl.textContent = text || '';
@@ -71,9 +81,12 @@
     if (enabled) {
       previewGalleryEl.style.display = 'none';
       previewDisabledMsg.style.display = 'block';
+      aspectRatioEl.disabled = true;
+      setStatus('Aspect ratio disabled in low-perf mode.', false);
     } else {
       previewGalleryEl.style.display = 'flex';
       previewDisabledMsg.style.display = 'none';
+      aspectRatioEl.disabled = false;
     }
   }
 
@@ -115,6 +128,9 @@
         const filtered = list.filter(u => u !== url);
         await api.storage.local.set({ [STORAGE_KEY]: filtered });
         // Highlights update will be triggered by storage listener in content.js
+        const tabId = await getActiveTabId();
+        if (tabId) try { await api.tabs.sendMessage(tabId, { type: 'IBD_SYNC_HIGHLIGHTS' }); } catch (_) { }
+        updateSelectedCount();
       };
 
       container.appendChild(img);
@@ -135,7 +151,8 @@
     const stored = await api.storage.local.get([
       ENABLED_KEY, QUALITY_KEY, FORMAT_KEY, FOLDER_KEY, USE_SUBFOLDER_KEY, ASK_LOCATION_KEY,
       LOW_PERF_KEY, PREVIEW_KEY, OVERLAY_KEY, BATCH_SIZE_KEY, DELAY_KEY, MAX_SELECT_KEY, LAZY_KEY,
-      THEME_KEY, MODE_KEY, NAMING_KEY, TEMPLATE_KEY, ZIP_KEY
+      THEME_KEY, MODE_KEY, NAMING_KEY, TEMPLATE_KEY, ZIP_KEY,
+      ASPECT_RATIO_KEY, CUSTOM_RATIO_W_KEY, CUSTOM_RATIO_H_KEY, CROP_MODE_KEY
     ]);
 
     enabledToggleEl.checked = !!stored[ENABLED_KEY];
@@ -168,9 +185,21 @@
     customTemplateEl.value = stored[TEMPLATE_KEY] || '';
     zipDownloadToggleEl.checked = !!stored[ZIP_KEY];
 
+    aspectRatioEl.value = stored[ASPECT_RATIO_KEY] || 'original';
+    customRatioWEl.value = stored[CUSTOM_RATIO_W_KEY] || 1;
+    customRatioHEl.value = stored[CUSTOM_RATIO_H_KEY] || 1;
+    cropModeEl.value = stored[CROP_MODE_KEY] || 'fill';
+
     updateLocationVisibility();
     updateQualityVisibility();
     updateNamingVisibility();
+    updateRatioVisibility();
+  }
+
+  function updateRatioVisibility() {
+    const ratio = aspectRatioEl.value;
+    customRatioField.style.display = ratio === 'custom' ? 'flex' : 'none';
+    cropModeField.style.display = ratio === 'original' ? 'none' : 'block';
   }
 
   function updateQualityVisibility() {
@@ -197,7 +226,8 @@
 
     const settings = await api.storage.local.get([
       QUALITY_KEY, FORMAT_KEY, FOLDER_KEY, USE_SUBFOLDER_KEY, ASK_LOCATION_KEY,
-      BATCH_SIZE_KEY, DELAY_KEY, LAZY_KEY, LOW_PERF_KEY, NAMING_KEY, TEMPLATE_KEY, ZIP_KEY
+      BATCH_SIZE_KEY, DELAY_KEY, LAZY_KEY, LOW_PERF_KEY, NAMING_KEY, TEMPLATE_KEY, ZIP_KEY,
+      ASPECT_RATIO_KEY, CUSTOM_RATIO_W_KEY, CUSTOM_RATIO_H_KEY, CROP_MODE_KEY
     ]);
 
     const tab = (await api.tabs.query({ active: true, currentWindow: true }))[0];
@@ -218,6 +248,10 @@
       namingMode: settings[NAMING_KEY] || 'auto',
       customTemplate: settings[TEMPLATE_KEY] || '',
       zipBundle: !!settings[ZIP_KEY],
+      aspectRatio: settings[ASPECT_RATIO_KEY] || 'original',
+      cropMode: settings[CROP_MODE_KEY] || 'fill',
+      customRatioW: Number(settings[CUSTOM_RATIO_W_KEY] || 1),
+      customRatioH: Number(settings[CUSTOM_RATIO_H_KEY] || 1),
       pageTitle,
       site
     };
@@ -259,6 +293,11 @@
   namingModeEl.onchange = () => { saveSetting(NAMING_KEY, namingModeEl.value); updateNamingVisibility(); };
   customTemplateEl.oninput = () => saveSetting(TEMPLATE_KEY, customTemplateEl.value);
   zipDownloadToggleEl.onchange = () => saveSetting(ZIP_KEY, zipDownloadToggleEl.checked);
+
+  aspectRatioEl.onchange = () => { saveSetting(ASPECT_RATIO_KEY, aspectRatioEl.value); updateRatioVisibility(); };
+  customRatioWEl.oninput = () => saveSetting(CUSTOM_RATIO_W_KEY, Number(customRatioWEl.value));
+  customRatioHEl.oninput = () => saveSetting(CUSTOM_RATIO_H_KEY, Number(customRatioHEl.value));
+  cropModeEl.onchange = () => saveSetting(CROP_MODE_KEY, cropModeEl.value);
 
   enabledToggleEl.onchange = async () => {
     const enabled = enabledToggleEl.checked;

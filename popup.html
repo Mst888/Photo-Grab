@@ -148,6 +148,35 @@
         <option value="large">Large Images Mode</option>
       </select>
     </div>
+    <div id="aspectRatioSection" class="ibd-field">
+      <label class="ibd-label" for="aspectRatio">Aspect Ratio</label>
+      <select id="aspectRatio" class="ibd-select">
+        <option value="original">Original</option>
+        <option value="1:1">1:1 Square</option>
+        <option value="4:3">4:3 Standard</option>
+        <option value="16:9">16:9 Widescreen</option>
+        <option value="custom">Custom Ratio</option>
+      </select>
+    </div>
+
+    <div id="customRatioField" class="ibd-field-row" style="display: none;">
+      <div class="ibd-field-half">
+        <label class="ibd-label-mini">Width Ratio</label>
+        <input type="number" id="customRatioW" class="ibd-input-mini" value="1" min="1" />
+      </div>
+      <div class="ibd-field-half">
+        <label class="ibd-label-mini">Height Ratio</label>
+        <input type="number" id="customRatioH" class="ibd-input-mini" value="1" min="1" />
+      </div>
+    </div>
+
+    <div id="cropModeField" class="ibd-field" style="display: none;">
+      <label class="ibd-label" for="cropMode">Crop Method</label>
+      <select id="cropMode" class="ibd-select">
+        <option value="fill">Fill (Center Crop)</option>
+        <option value="fit">Fit (Contain)</option>
+      </select>
+    </div>
 
     <div id="previewGallerySection" class="ibd-field">
       <label class="ibd-label">Selection Gallery</label>
