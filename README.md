@@ -168,11 +168,12 @@ Note: A manifest alone is not sufficient — all referenced files must be in the
 ## Contributing & Support
 - Open an issue for bugs or feature requests.  
 - To add a demo GIF or short video to the README, upload the file to the repo and I will place it in the README.
-<a href="https://www.buymeacoffee.com/mst888"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a happy&emoji=😎&slug=mst888&button_colour=5F7FFF&font_colour=ffffff&font_family=Bree&outline_colour=000000&coffee_colour=FFDD00" /></a>
+<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="mst888" data-color="#5F7FFF" data-emoji="😁"  data-font="Inter" data-text="Make me a happy" data-outline-color="#000000" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
 ---
 
 ## License & Info
 - License: MIT  
 - Author: Mst888  
 - Version: 1.7.1
+
 
