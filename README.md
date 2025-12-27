@@ -170,8 +170,8 @@ Note: A manifest alone is not sufficient — all referenced files must be in the
 - To add a demo GIF or short video to the README, upload the file to the repo and I will place it in the README.
 
 
-<a href="https://www.buymeacoffee.com/mst888"><img src="https://img.buymeacoffee.com/button-api/?text=Make me a happy&emoji=😁&slug=mst888&button_colour=5F7FFF&font_colour=ffffff&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00" /></a>
-
+                                                 https://www.buymeacoffee.com/mst888
+<img width="3000" height="3000" alt="qr-code" src="https://github.com/user-attachments/assets/957d7a3a-114e-44df-8019-b847bcaf2d11" />
 
 ---
 
@@ -179,6 +179,7 @@ Note: A manifest alone is not sufficient — all referenced files must be in the
 - License: MIT  
 - Author: Mst888  
 - Version: 1.7.1
+
 
 
 
