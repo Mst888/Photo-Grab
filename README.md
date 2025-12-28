@@ -33,7 +33,7 @@ Photo-Grab: A professional browser extension for quickly selecting and bulk-down
 - Same Size Mode & Smart Filters: Select one image to find others with the same dimensions or filter by resolution/file type.  
 - ZIP Bundling & Smart Naming: Package selections into a single .zip and use dynamic naming variables like `{site}`, `{title}`, `{index}`; supports subfolders.  
 - Compact Popup (300x500) + Floating Toolbar: Fast access and controls without interrupting browsing.  
-- Themes: Onyx Gray, Spotify Green, Classic Blue.  
+- Themes: Onyx Gray, Classic Green, Classic Blue, Lovely Pink, Night and Day.  
 - Developer friendly: Manifest files included in repo; supports unpacked loading and web-ext testing.
 
 ---
@@ -176,6 +176,7 @@ Note: A manifest alone is not sufficient — all referenced files must be in the
 - License: MIT  
 - Author: Mst888  
 - Version: 1.7.1
+
 
 
 
