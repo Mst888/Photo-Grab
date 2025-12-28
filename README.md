@@ -169,16 +169,14 @@ Note: A manifest alone is not sufficient — all referenced files must be in the
 - Open an issue for bugs or feature requests.  
 - To add a demo GIF or short video to the README, upload the file to the repo and I will place it in the README.
 
-
-                                                 https://www.buymeacoffee.com/mst888
-<img width="3000" height="3000" alt="qr-code" src="https://github.com/user-attachments/assets/957d7a3a-114e-44df-8019-b847bcaf2d11" />
-
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-orange)]((https://www.buymeacoffee.com/mst888))
 ---
 
 ## License & Info
 - License: MIT  
 - Author: Mst888  
 - Version: 1.7.1
+
 
 
 
