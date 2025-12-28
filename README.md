@@ -38,58 +38,42 @@ Photo-Grab: A professional browser extension for quickly selecting and bulk-down
 
 ---
 
-## Screenshots — Organized by Feature
-(Each image includes a short caption so visitors immediately understand what they’re seeing.)
+## Screenshots From Program
 
-### 1) Area Selection — Draw & Visual Feedback
 <img alt="Area selection with badges" src="https://github.com/user-attachments/assets/e9e421f4-110f-4b49-96be-e3d2fa2a4546" />
-*Draw a rectangle on the page to select multiple images; blue outline and index badges appear.*
 
 <img alt="Selection badges and overlay" src="https://github.com/user-attachments/assets/d3f288ec-9b25-4a26-b499-880216014cb1" />
-*Selected images are indexed and a selection summary is shown.*
 
 ---
 
-### 2) Popup UI & Floating Toolbar — Fast Access
 <img alt="Compact popup UI" src="https://github.com/user-attachments/assets/298bd574-fff3-4c1f-828c-a926170a702d" />
-*Compact popup (300x500) — filters, naming, and download options.*
 
 <img alt="Floating toolbar on page" src="https://github.com/user-attachments/assets/248fb72f-a54e-4928-a654-b2d0ab791865" />
-*Floating toolbar for quick on-page actions without opening the popup.*
 
 <img alt="Popup themes and list" src="https://github.com/user-attachments/assets/f14c2416-d366-4b63-9c7a-87a455e60e3c" />
-*Popup list view and theme preview.*
 
 ---
 
-### 3) Same Size Mode & Smart Filters
 <img alt="Same size mode and filters" src="https://github.com/user-attachments/assets/d3f288ec-9b25-4a26-b499-880216014cb1" />
-*Select one image to automatically capture all images with the same dimensions; use filters to target high-resolution items.*
 
 ---
-
-### 4) Bulk Download, ZIP Bundling & Smart Naming
 <img alt="ZIP bundling and download flow" src="https://github.com/user-attachments/assets/a69935cf-dfe0-4671-bd6f-848fa8d653cf" />
-*Package your selection into a .zip for a clean bulk download experience.*
 
 <img alt="Naming templates and subfolders" src="https://github.com/user-attachments/assets/9c086134-86b1-432e-9dda-1e6736a417c6" />
-*Dynamic naming templates and subfolder support for organized archives.*
 
 ---
 
-### 5) Themes & Settings — Customize the Look
 <img alt="Theme example 1" src="https://github.com/user-attachments/assets/85b26c08-03de-4520-bc71-0cc83e42ed0b" />
 <img alt="Theme example 2" src="https://github.com/user-attachments/assets/68550f78-f1a2-476b-a96c-97e04f42e68f" />
 <img alt="Theme example 3" src="https://github.com/user-attachments/assets/81e4a89d-601b-4b78-ac85-a415c3d90517" />
-*Theme options and settings screen examples.*
+
 
 ---
 
-### 6) Mobile / Responsive Preview
+
 <img alt="Mobile preview 1" src="https://github.com/user-attachments/assets/bf741b1b-f774-43ee-84f3-bb3a39b33aa8" />
 <img alt="Mobile preview 2" src="https://github.com/user-attachments/assets/24fc9f24-b24f-4234-a047-bb9cca9beccb" />
 <img alt="Mobile preview 3" src="https://github.com/user-attachments/assets/5573876b-c0fc-43a3-a8da-492bbe7c17ed" />
-*Mobile previews — the extension is primarily desktop-focused; these show some responsive cases.*
 
 ---
 
@@ -176,6 +160,7 @@ Note: A manifest alone is not sufficient — all referenced files must be in the
 - License: MIT  
 - Author: Mst888  
 - Version: 1.7.1
+
 
 
 
