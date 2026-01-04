@@ -1,7 +1,7 @@
 (() => {
-  const api = typeof browser !== 'undefined' ? browser : chrome;
+  const api = browser;
 
-  // For compatibility with some MV3 environments (like Chrome)
+  // Load JSZip for Firefox
   try {
     if (typeof JSZip === 'undefined' && typeof importScripts !== 'undefined') {
       importScripts('jszip.min.js');

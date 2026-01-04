@@ -1,5 +1,5 @@
 (() => {
-  const api = typeof browser !== 'undefined' ? browser : chrome;
+  const api = browser;
 
   const STORAGE_KEY = 'ibd_selectedImages_v1';
   const ATTR_SELECTED = 'data-ibd-selected';
