@@ -1,171 +1,54 @@
 # Photo-Grab 📸
 
-Photo-Grab: A professional browser extension for quickly selecting and bulk-downloading high-resolution images from web pages, with smart naming and ZIP packaging — ideal for content creators, researchers, and visual collectors.
-
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) ![Version: 1.7.1](https://img.shields.io/badge/Version-1.7.1-blue)[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-orange)](https://www.buymeacoffee.com/mst888)
+**Photo-Grab** is a professional, high-performance web extension designed for power users who need to select, organize, and download images from the web with precision and speed.
 
 ---
 
-## Contents
-- [Quick Overview](#quick-overview)
-- [Features](#features)
-- [Screenshots — Organized by Feature](#screenshots--organized-by-feature)
-- [Installation — Step by Step](#installation---step-by-step)
-  - [Manifest Files (View Directly)](#manifest-files-view-directly)
-  - [Option A — Ready Package (for users)](#option-a---ready-package-for-users)
-  - [Option B — From Source (for developers)](#option-b---from-source-for-developers)
-  - [Option C — Manual / Manifest Testing](#option-c---manual--manifest-testing)
-- [Quick Usage — 3 Steps](#quick-usage---3-steps)
-- [Security & Permissions](#security--permissions)
-- [Contributing & Support](#contributing--support)
-- [License & Info](#license--info)
+## 🌟 Key Features
+
+### 🎯 Precision Selection
+- **Area Selection**: Drag a rectangle over the webpage to select multiple images at once.
+- **Smart Filters**: Instantly find high-resolution images (800x600+) or specific formats.
+- **Same Size Mode**: Select one image and automatically find all other images on the page with matching dimensions.
+- **Visual Feedback**: Real-time blue outlines and index badges keep you informed of your selection.
+
+### 📦 Power Downloads (v1.6+)
+- **ZIP Bundling**: Pack your entire selection into a single `.zip` archive for a cleaner download experience.
+- **Smart Naming Templates**: Use dynamic variables like `{site}`, `{title}`, and `{index}` to automatically name your files.
+- **Subfolder Support**: Organize downloads into custom subfolders directly from the popup.
+
+### 🎨 Premium UI/UX
+- **Compact Popup**: A streamlined **300x500** interface that stays out of your way.
+- **Modern Themes**: Choose from several premium themes, including **Onyx Gray**, **Spotify Green**, and **Classic Blue**.
+- **Floating Toolbar**: A non-intrusive on-page toolbar for quick actions without opening the popup.
 
 ---
 
-## Quick Overview
-- Target audience: Power users who collect images (editors, researchers, content creators).  
-- Value proposition: Scan a page, select desired images, apply smart naming, and download them as organized ZIP archives.
+## 🛠️ Build Instructions
 
----
+This repository contains the source code for **Photo-Grab**. Follow these steps to build the extension from source:
 
-## Features
-- Area Selection: Draw a rectangle on the page to select multiple images (blue outline + index badges).  
-- Same Size Mode & Smart Filters: Select one image to find others with the same dimensions or filter by resolution/file type.  
-- ZIP Bundling & Smart Naming: Package selections into a single .zip and use dynamic naming variables like `{site}`, `{title}`, `{index}`; supports subfolders.  
-- Compact Popup (300x500) + Floating Toolbar: Fast access and controls without interrupting browsing.  
-- Themes: Onyx Gray, Classic Green, Classic Blue, Lovely Pink, Night and Day.  
-- Developer friendly: Manifest files included in repo; supports unpacked loading and web-ext testing.
+### 1. Environment Requirements
+- **Node.js**: v18.x or higher.
+- **npm**: v9.x or higher.
 
----
-
-## Screenshots From Program
-
-<img alt="Area selection with badges" src="https://github.com/user-attachments/assets/e9e421f4-110f-4b49-96be-e3d2fa2a4546" />
-
-<img alt="Selection badges and overlay" src="https://github.com/user-attachments/assets/d3f288ec-9b25-4a26-b499-880216014cb1" />
-
----
-
-<img alt="Compact popup UI" src="https://github.com/user-attachments/assets/298bd574-fff3-4c1f-828c-a926170a702d" />
-
-<img alt="Floating toolbar on page" src="https://github.com/user-attachments/assets/248fb72f-a54e-4928-a654-b2d0ab791865" />
-
-<img alt="Popup themes and list" src="https://github.com/user-attachments/assets/f14c2416-d366-4b63-9c7a-87a455e60e3c" />
-
----
-
-<img alt="Same size mode and filters" src="https://github.com/user-attachments/assets/d3f288ec-9b25-4a26-b499-880216014cb1" />
-
----
-<img alt="ZIP bundling and download flow" src="https://github.com/user-attachments/assets/a69935cf-dfe0-4671-bd6f-848fa8d653cf" />
-
-<img alt="Naming templates and subfolders" src="https://github.com/user-attachments/assets/9c086134-86b1-432e-9dda-1e6736a417c6" />
-
----
-
-<img alt="Theme example 1" src="https://github.com/user-attachments/assets/85b26c08-03de-4520-bc71-0cc83e42ed0b" />
-<img alt="Theme example 2" src="https://github.com/user-attachments/assets/68550f78-f1a2-476b-a96c-97e04f42e68f" />
-<img alt="Theme example 3" src="https://github.com/user-attachments/assets/81e4a89d-601b-4b78-ac85-a415c3d90517" />
-
-
----
-
-
-<img alt="Mobile preview 1" src="https://github.com/user-attachments/assets/bf741b1b-f774-43ee-84f3-bb3a39b33aa8" />
-<img alt="Mobile preview 2" src="https://github.com/user-attachments/assets/24fc9f24-b24f-4234-a047-bb9cca9beccb" />
-<img alt="Mobile preview 3" src="https://github.com/user-attachments/assets/5573876b-c0fc-43a3-a8da-492bbe7c17ed" />
-
----
-
-## Installation — Step by Step
-
-Full installation instructions (installation file): https://github.com/Mst888/Photo-Grab/blob/b4b99e8f22b4f8bcaf4828e6ae435761810784f1/kurulum.txt
-
-### Manifest Files (View Directly)
-- manifest (repo): https://github.com/Mst888/Photo-Grab/blob/b4b99e8f22b4f8bcaf4828e6ae435761810784f1/manifest.json  
-- manifest.chrome (repo): https://github.com/Mst888/Photo-Grab/blob/b4b99e8f22b4f8bcaf4828e6ae435761810784f1/manifest.chrome.json  
-- Raw manifest: https://raw.githubusercontent.com/Mst888/Photo-Grab/b4b99e8f22b4f8bcaf4828e6ae435761810784f1/manifest.json  
-- Raw manifest.chrome: https://raw.githubusercontent.com/Mst888/Photo-Grab/b4b99e8f22b4f8bcaf4828e6ae435761810784f1/manifest.chrome.json
-
----
-
-### Option A — Ready Package (for users)
-1. Download the latest package from Releases or the `web-ext-artifacts/` folder (.zip).  
-2. Chrome:
-   - Open chrome://extensions/, enable "Developer mode" in the top-right.  
-   - Click "Load unpacked" and select the folder containing the extracted zip contents.  
-3. Firefox:
-   - Open about:debugging#runtime → "This Firefox" → "Temporary Add-on" → select the `manifest.json` from the extracted folder or install the .xpi.
-
-Note: For Chrome-specific manifest V3 settings, consult `manifest.chrome.json` in the repo. The build script copies the appropriate manifest where needed.
-
----
-
-### Option B — From Source (for developers)
-1. Clone the repo:
-```bash
-git clone https://github.com/Mst888/Photo-Grab.git
-cd Photo-Grab
-```
-2. Install dependencies:
+### 2. Installation
 ```bash
 npm install
 ```
-3. Build / package:
+
+### 3. Packaging
+To generate a distributable `.zip` file:
 ```bash
 npm run build
 ```
-4. Load the output:
-- Output folder: use the build produced in `web-ext-artifacts/`.  
-- Chrome: chrome://extensions → Load unpacked → select the build folder.  
-- Firefox: `npx web-ext run --source-dir=./src` for quick local testing.
-
-Developer tip:
-```bash
-npx web-ext run --source-dir=./src
-```
+The resulting package will be in the `web-ext-artifacts/` directory.
 
 ---
 
-### Option C — Manual / Manifest Testing
-1. Download the raw manifest files from the links above.  
-2. Create a new folder and place the manifest plus required assets (popup HTML/CSS/JS, icons, content scripts) into it.  
-3. chrome://extensions → Load unpacked → select the folder.
+## 📄 Source Code Policy
+- **Vanilla JS**: No transpilation, minification, or obfuscation is applied.
+- **Human Readable**: The code is provided in its original form for full transparency.
 
-Note: A manifest alone is not sufficient — all referenced files must be in the folder.
-
----
-
-## Quick Usage — 3 Steps
-1. Draw a rectangle on the page to select images (Area Selection).  
-2. Adjust filters, Same Size, and naming templates in the popup.  
-3. Click "Download" to create a ZIP and save your organized archive.
-
----
-
-## Security & Permissions
-- Required permissions: activeTab / host permissions (listed clearly in the manifest).  
-- Privacy: The extension does not collect personal data; it only accesses selected image URLs and image data for download purposes. Review the manifest files to verify permissions.
-
----
-
-## Contributing & Support
-- Open an issue for bugs or feature requests.  
-- To add a demo GIF or short video to the README, upload the file to the repo and I will place it in the README.
-
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-orange)]((https://www.buymeacoffee.com/mst888))
----
-
-## License & Info
-- License: MIT  
-- Author: Mst888  
-- Version: 1.7.1
-
-
-
-
-
-
-
-
-
+**Author**: Mst888 
+**Version**: 1.7.1
