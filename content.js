@@ -1,5 +1,5 @@
 (() => {
-  const api = typeof browser !== 'undefined' ? browser : chrome;
+  const api = browser;
 
   const STORAGE_KEY = 'ibd_selectedImages_v1';
   const ATTR_SELECTED = 'data-ibd-selected';
@@ -12,17 +12,24 @@
   const MODE_KEY = 'ibd_selectionMode_v1';
   const BADGE_ATTR = 'data-ibd-badge';
   const TOOLBAR_ID = 'ibd-toolbar-v1';
+  const CONVERTER_TOOLBAR_ID = 'ibd-converter-toolbar-v1';
   const SHORTCUTS_ENABLED_KEY = 'ibd_shortcutsEnabled_v1';
   const SHORTCUTS_DATA_KEY = 'ibd_shortcutsData_v1';
+  const CONVERTER_ENABLED_KEY = 'ibd_converterEnabled_v1';
+  const CONVERTER_TOOLBAR_KEY = 'ibd_converterToolbarVisible_v1';
+  const CONVERTER_FORMAT_KEY = 'ibd_converterDefaultFormat_v1';
+  const CONVERTER_QUALITY_KEY = 'ibd_converterQuality_v1';
+  const CONVERTER_AUTO_DOWNLOAD_KEY = 'ibd_converterAutoDownload_v1';
 
   const DEFAULT_SHORTCUTS = {
-    toggleSelection: { key: 's', alt: true, ctrl: false, shift: false },
+    toggleSelection: { key: 'e', alt: true, ctrl: false, shift: false },
     selectAll: { key: 'a', alt: true, ctrl: false, shift: false },
-    clearSelection: { key: 'c', alt: true, ctrl: false, shift: false },
+    clearSelection: { key: 'x', alt: true, ctrl: false, shift: false },
     download: { key: 'd', alt: true, ctrl: false, shift: false },
     downloadZip: { key: 'z', alt: true, ctrl: false, shift: false },
     togglePreview: { key: 'p', alt: true, ctrl: false, shift: false },
-    toggleLowPerf: { key: 'l', alt: true, ctrl: false, shift: false }
+    toggleLowPerf: { key: 'l', alt: true, ctrl: false, shift: false },
+    toggleConverter: { key: 'c', alt: true, ctrl: false, shift: false }
   };
 
   let settingsCache = {
@@ -32,11 +39,14 @@
     overlays: true,
     maxSelection: 50,
     theme: 'light',
-    maxSelection: 50,
-    theme: 'light',
     mode: 'normal',
     shortcutsEnabled: true,
-    shortcuts: { ...DEFAULT_SHORTCUTS }
+    shortcuts: { ...DEFAULT_SHORTCUTS },
+    converterEnabled: false,
+    converterToolbarVisible: false,
+    converterFormat: 'jpeg',
+    converterQuality: 90,
+    converterAutoDownload: true
   };
 
   let areaRect = null;
@@ -351,6 +361,138 @@
     root.querySelector('[data-ibd-download]').onclick = () => { api.runtime.sendMessage({ type: 'IBD_DOWNLOAD_REQUEST_FROM_PAGE' }); };
   }
 
+  function ensureConverterToolbar() {
+    if (document.getElementById(CONVERTER_TOOLBAR_ID)) return;
+    if (!settingsCache.converterEnabled || !settingsCache.converterToolbarVisible) return;
+    
+    const root = document.createElement('div');
+    root.id = CONVERTER_TOOLBAR_ID;
+    if (settingsCache.theme) root.className = `ibd-theme-${settingsCache.theme}`;
+    root.innerHTML = `
+      <div class="ibd-converter-toolbar" data-ibd-ui="1">
+        <div class="ibd-converter-header">
+          <div class="ibd-converter-title">🔄 Photo Converter</div>
+          <button class="ibd-converter-close" data-converter-close title="Close">×</button>
+        </div>
+        <div class="ibd-converter-body">
+          <input type="file" id="converterFileInput" accept="image/*" multiple style="display:none;" />
+          <button class="ibd-converter-upload-btn" data-converter-upload>
+            <span>📁 Upload Image</span>
+          </button>
+          <div class="ibd-converter-preview" data-converter-preview style="display:none;">
+            <img data-converter-img style="max-width: 100%; max-height: 150px; border-radius: 6px;" />
+            <div data-converter-filename style="font-size: 11px; margin-top: 4px; color: var(--ibd-text-sub);"></div>
+          </div>
+          <div class="ibd-converter-controls">
+            <label class="ibd-converter-label">Format:</label>
+            <select class="ibd-converter-select" data-converter-format>
+              <option value="jpeg">JPEG</option>
+              <option value="png">PNG</option>
+              <option value="webp">WEBP</option>
+            </select>
+            <label class="ibd-converter-label">Quality:</label>
+            <input type="range" class="ibd-converter-range" data-converter-quality min="60" max="100" value="90" />
+            <span class="ibd-converter-quality-val" data-converter-quality-val>90%</span>
+          </div>
+          <button class="ibd-converter-convert-btn" data-converter-convert disabled>
+            ⚡ Convert & Download
+          </button>
+        </div>
+      </div>
+    `;
+    document.documentElement.appendChild(root);
+    
+    const fileInput = root.querySelector('#converterFileInput');
+    const uploadBtn = root.querySelector('[data-converter-upload]');
+    const convertBtn = root.querySelector('[data-converter-convert]');
+    const closeBtn = root.querySelector('[data-converter-close]');
+    const formatSelect = root.querySelector('[data-converter-format]');
+    const qualityRange = root.querySelector('[data-converter-quality]');
+    const qualityVal = root.querySelector('[data-converter-quality-val]');
+    const preview = root.querySelector('[data-converter-preview]');
+    const previewImg = root.querySelector('[data-converter-img]');
+    const filenameDiv = root.querySelector('[data-converter-filename]');
+    
+    let currentFile = null;
+    
+    formatSelect.value = settingsCache.converterFormat;
+    qualityRange.value = settingsCache.converterQuality;
+    qualityVal.textContent = settingsCache.converterQuality + '%';
+    
+    uploadBtn.onclick = () => fileInput.click();
+    
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      currentFile = file;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        previewImg.src = ev.target.result;
+        filenameDiv.textContent = file.name;
+        preview.style.display = 'block';
+        convertBtn.disabled = false;
+      };
+      reader.readAsDataURL(file);
+    };
+    
+    qualityRange.oninput = () => {
+      qualityVal.textContent = qualityRange.value + '%';
+    };
+    
+    convertBtn.onclick = async () => {
+      if (!currentFile) return;
+      const format = formatSelect.value;
+      const quality = parseInt(qualityRange.value) / 100;
+      
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const response = await api.runtime.sendMessage({
+            type: 'IBD_CONVERT_IMAGE',
+            payload: {
+              dataUrl: e.target.result,
+              format: format,
+              quality: quality,
+              filename: currentFile.name,
+              autoDownload: settingsCache.converterAutoDownload
+            }
+          });
+          
+          if (response && response.ok) {
+            convertBtn.textContent = '✓ Converted!';
+            setTimeout(() => {
+              convertBtn.textContent = '⚡ Convert & Download';
+              if (settingsCache.converterAutoDownload) {
+                fileInput.value = '';
+                currentFile = null;
+                preview.style.display = 'none';
+                convertBtn.disabled = true;
+              }
+            }, 2000);
+          } else {
+            convertBtn.textContent = '✗ Failed';
+            setTimeout(() => { convertBtn.textContent = '⚡ Convert & Download'; }, 2000);
+          }
+        } catch (err) {
+          console.error('Conversion error:', err);
+          convertBtn.textContent = '✗ Error';
+          setTimeout(() => { convertBtn.textContent = '⚡ Convert & Download'; }, 2000);
+        }
+      };
+      reader.readAsDataURL(currentFile);
+    };
+    
+    closeBtn.onclick = () => {
+      root.remove();
+      api.storage.local.set({ [CONVERTER_TOOLBAR_KEY]: false });
+    };
+  }
+
+  function removeConverterToolbar() {
+    const toolbar = document.getElementById(CONVERTER_TOOLBAR_ID);
+    if (toolbar) toolbar.remove();
+  }
+
   api.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
     if (msg.type === 'IBD_SET_ENABLED') {
       settingsCache.enabled = !!msg.payload?.enabled;
@@ -359,6 +501,22 @@
         syncHighlights();
       } else { ensureToolbar(); syncHighlights(); }
       updateModeListeners();
+      sendResponse({ ok: true });
+    } else if (msg.type === 'IBD_CONVERTER_TOGGLE') {
+      settingsCache.converterEnabled = !!msg.payload?.enabled;
+      if (settingsCache.converterEnabled && settingsCache.converterToolbarVisible) {
+        ensureConverterToolbar();
+      } else {
+        removeConverterToolbar();
+      }
+      sendResponse({ ok: true });
+    } else if (msg.type === 'IBD_CONVERTER_TOOLBAR_TOGGLE') {
+      settingsCache.converterToolbarVisible = !!msg.payload?.visible;
+      if (settingsCache.converterEnabled && settingsCache.converterToolbarVisible) {
+        ensureConverterToolbar();
+      } else {
+        removeConverterToolbar();
+      }
       sendResponse({ ok: true });
     } else if (msg.type === 'IBD_SYNC_HIGHLIGHTS' || msg.type === 'IBD_CLEAR_SELECTION') {
       if (msg.type === 'IBD_CLEAR_SELECTION') setSelection([]);
@@ -433,6 +591,15 @@
         const previewKey = 'ibd_previews_v1';
         await api.storage.local.set({ [previewKey]: !settingsCache.previews });
         break;
+      case 'toggleConverter':
+        const newVisibility = !settingsCache.converterToolbarVisible;
+        await api.storage.local.set({ [CONVERTER_TOOLBAR_KEY]: newVisibility });
+        if (settingsCache.converterEnabled && newVisibility) {
+          ensureConverterToolbar();
+        } else {
+          removeConverterToolbar();
+        }
+        break;
     }
   }
 
@@ -459,7 +626,8 @@
   async function init() {
     const stored = await api.storage.local.get([
       ENABLED_KEY, LOW_PERF_KEY, PREVIEW_KEY, OVERLAY_KEY, MAX_SELECT_KEY, THEME_KEY, MODE_KEY,
-      SHORTCUTS_ENABLED_KEY, SHORTCUTS_DATA_KEY
+      SHORTCUTS_ENABLED_KEY, SHORTCUTS_DATA_KEY,
+      CONVERTER_ENABLED_KEY, CONVERTER_TOOLBAR_KEY, CONVERTER_FORMAT_KEY, CONVERTER_QUALITY_KEY, CONVERTER_AUTO_DOWNLOAD_KEY
     ]);
     settingsCache = {
       enabled: !!stored[ENABLED_KEY],
@@ -470,9 +638,15 @@
       theme: stored[THEME_KEY] || 'light',
       mode: stored[MODE_KEY] || 'normal',
       shortcutsEnabled: stored[SHORTCUTS_ENABLED_KEY] !== false,
-      shortcuts: stored[SHORTCUTS_DATA_KEY] || { ...DEFAULT_SHORTCUTS }
+      shortcuts: stored[SHORTCUTS_DATA_KEY] || { ...DEFAULT_SHORTCUTS },
+      converterEnabled: !!stored[CONVERTER_ENABLED_KEY],
+      converterToolbarVisible: !!stored[CONVERTER_TOOLBAR_KEY],
+      converterFormat: stored[CONVERTER_FORMAT_KEY] || 'jpeg',
+      converterQuality: stored[CONVERTER_QUALITY_KEY] || 90,
+      converterAutoDownload: stored[CONVERTER_AUTO_DOWNLOAD_KEY] !== false
     };
     if (settingsCache.enabled) { ensureToolbar(); syncHighlights(); updateModeListeners(); }
+    if (settingsCache.converterEnabled && settingsCache.converterToolbarVisible) { ensureConverterToolbar(); }
   }
 
   api.storage.onChanged.addListener((changes, area) => {
@@ -483,6 +657,11 @@
     if (changes[SHORTCUTS_ENABLED_KEY]) { settingsCache.shortcutsEnabled = changes[SHORTCUTS_ENABLED_KEY].newValue !== false; }
     if (changes[SHORTCUTS_DATA_KEY]) { settingsCache.shortcuts = changes[SHORTCUTS_DATA_KEY].newValue || { ...DEFAULT_SHORTCUTS }; }
     if (changes[LOW_PERF_KEY]) { settingsCache.lowPerf = !!changes[LOW_PERF_KEY].newValue; needsSync = true; }
+    if (changes[CONVERTER_ENABLED_KEY]) { settingsCache.converterEnabled = !!changes[CONVERTER_ENABLED_KEY].newValue; }
+    if (changes[CONVERTER_TOOLBAR_KEY]) { settingsCache.converterToolbarVisible = !!changes[CONVERTER_TOOLBAR_KEY].newValue; }
+    if (changes[CONVERTER_FORMAT_KEY]) { settingsCache.converterFormat = changes[CONVERTER_FORMAT_KEY].newValue || 'jpeg'; }
+    if (changes[CONVERTER_QUALITY_KEY]) { settingsCache.converterQuality = changes[CONVERTER_QUALITY_KEY].newValue || 90; }
+    if (changes[CONVERTER_AUTO_DOWNLOAD_KEY]) { settingsCache.converterAutoDownload = changes[CONVERTER_AUTO_DOWNLOAD_KEY].newValue !== false; }
     if (changes[THEME_KEY]) {
       settingsCache.theme = changes[THEME_KEY].newValue || 'light';
       const tb = document.getElementById(TOOLBAR_ID);
@@ -490,6 +669,12 @@
         const themes = ['light', 'dark', 'blue', 'pink', 'purple', 'spotify', 'gray'];
         themes.forEach(t => tb.classList.remove(`ibd-theme-${t}`));
         tb.classList.add(`ibd-theme-${settingsCache.theme}`);
+      }
+      const ctb = document.getElementById(CONVERTER_TOOLBAR_ID);
+      if (ctb) {
+        const themes = ['light', 'dark', 'blue', 'pink', 'purple', 'spotify', 'gray'];
+        themes.forEach(t => ctb.classList.remove(`ibd-theme-${t}`));
+        ctb.classList.add(`ibd-theme-${settingsCache.theme}`);
       }
     }
     if (changes[STORAGE_KEY]) needsSync = true;

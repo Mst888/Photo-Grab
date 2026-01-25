@@ -1,5 +1,5 @@
 (() => {
-  const api = typeof browser !== 'undefined' ? browser : chrome;
+  const api = browser;
 
   const STORAGE_KEY = 'ibd_selectedImages_v1';
   const QUALITY_KEY = 'ibd_jpegQuality_v1';
@@ -34,15 +34,22 @@
   const CLEAR_ON_DISABLE_KEY = 'ibd_clearOnDisable_v1';
   const SHORTCUTS_ENABLED_KEY = 'ibd_shortcutsEnabled_v1';
   const SHORTCUTS_DATA_KEY = 'ibd_shortcutsData_v1';
+  const CONVERTER_ENABLED_KEY = 'ibd_converterEnabled_v1';
+  const CONVERTER_TOOLBAR_KEY = 'ibd_converterToolbarVisible_v1';
+  const CONVERTER_FORMAT_KEY = 'ibd_converterDefaultFormat_v1';
+  const CONVERTER_QUALITY_KEY = 'ibd_converterQuality_v1';
+  const CONVERTER_AUTO_DOWNLOAD_KEY = 'ibd_converterAutoDownload_v1';
+  const LANGUAGE_KEY = 'ibd_language_v1';
 
   const DEFAULT_SHORTCUTS = {
-    toggleSelection: { key: 's', alt: true, ctrl: false, shift: false },
+    toggleSelection: { key: 'e', alt: true, ctrl: false, shift: false },
     selectAll: { key: 'a', alt: true, ctrl: false, shift: false },
-    clearSelection: { key: 'c', alt: true, ctrl: false, shift: false },
+    clearSelection: { key: 'x', alt: true, ctrl: false, shift: false },
     download: { key: 'd', alt: true, ctrl: false, shift: false },
     downloadZip: { key: 'z', alt: true, ctrl: false, shift: false },
     togglePreview: { key: 'p', alt: true, ctrl: false, shift: false },
-    toggleLowPerf: { key: 'l', alt: true, ctrl: false, shift: false }
+    toggleLowPerf: { key: 'l', alt: true, ctrl: false, shift: false },
+    toggleConverter: { key: 'c', alt: true, ctrl: false, shift: false }
   };
 
   // Element references
@@ -96,11 +103,34 @@
     shortcutOverlay: document.getElementById('shortcutOverlay'),
     recorderActionName: document.getElementById('recorderActionName'),
     recorderKeys: document.getElementById('recorderKeys'),
-    editShortcutBtns: document.querySelectorAll('.ibd-edit-shortcut')
+    editShortcutBtns: document.querySelectorAll('.ibd-edit-shortcut'),
+    converterEnabledToggle: document.getElementById('converterEnabledToggle'),
+    converterToolbarToggle: document.getElementById('converterToolbarToggle'),
+    converterFormat: document.getElementById('converterFormat'),
+    converterQuality: document.getElementById('converterQuality'),
+    converterQualityValue: document.getElementById('converterQualityValue'),
+    converterAutoDownloadToggle: document.getElementById('converterAutoDownloadToggle'),
+    githubBtn: document.getElementById('githubBtn'),
+    clearOnDisableToggle: document.getElementById('clearOnDisableToggle'),
+    languageSelect: document.getElementById('languageSelect')
   };
 
   let recordingAction = null;
   let currentShortcuts = { ...DEFAULT_SHORTCUTS };
+  let currentLanguage = 'en';
+
+  function applyLanguage(lang) {
+    if (!LANGUAGES || !LANGUAGES[lang]) return;
+    currentLanguage = lang;
+    const translations = LANGUAGES[lang].translations;
+    
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (translations[key]) {
+        el.textContent = translations[key];
+      }
+    });
+  }
 
   function setStatus(text, isError) {
     els.status.textContent = text || '';
@@ -190,7 +220,9 @@
       THEME_KEY, MODE_KEY, NAMING_KEY, TEMPLATE_KEY, ZIP_KEY,
       ASPECT_RATIO_KEY, CUSTOM_RATIO_W_KEY, CUSTOM_RATIO_H_KEY, CROP_MODE_KEY,
       STAY_OPEN_KEY, POPUP_SIZE_PRESET_KEY, POPUP_WIDTH_KEY, POPUP_HEIGHT_KEY,
-      CLEAR_ON_DISABLE_KEY, SHORTCUTS_ENABLED_KEY, SHORTCUTS_DATA_KEY
+      CLEAR_ON_DISABLE_KEY, SHORTCUTS_ENABLED_KEY, SHORTCUTS_DATA_KEY,
+      CONVERTER_ENABLED_KEY, CONVERTER_TOOLBAR_KEY, CONVERTER_FORMAT_KEY, CONVERTER_QUALITY_KEY, CONVERTER_AUTO_DOWNLOAD_KEY,
+      LANGUAGE_KEY
     ]);
 
     els.enabledToggle.checked = !!stored[ENABLED_KEY];
@@ -234,6 +266,19 @@
     if (els.shortcutsToggle) els.shortcutsToggle.checked = stored[SHORTCUTS_ENABLED_KEY] !== false;
     currentShortcuts = stored[SHORTCUTS_DATA_KEY] || { ...DEFAULT_SHORTCUTS };
     updateShortcutUI();
+
+    if (els.converterEnabledToggle) els.converterEnabledToggle.checked = !!stored[CONVERTER_ENABLED_KEY];
+    if (els.converterToolbarToggle) els.converterToolbarToggle.checked = !!stored[CONVERTER_TOOLBAR_KEY];
+    if (els.converterFormat) els.converterFormat.value = stored[CONVERTER_FORMAT_KEY] || 'jpeg';
+    if (els.converterQuality) {
+      els.converterQuality.value = String(clampQuality(stored[CONVERTER_QUALITY_KEY] ?? 90));
+      if (els.converterQualityValue) els.converterQualityValue.textContent = els.converterQuality.value;
+    }
+    if (els.converterAutoDownloadToggle) els.converterAutoDownloadToggle.checked = stored[CONVERTER_AUTO_DOWNLOAD_KEY] !== false;
+    
+    const lang = stored[LANGUAGE_KEY] || 'en';
+    if (els.languageSelect) els.languageSelect.value = lang;
+    applyLanguage(lang);
 
     updateLocationVisibility();
     updateQualityVisibility();
@@ -602,6 +647,37 @@
     els.editShortcutBtns.forEach(btn => {
       btn.onclick = () => startRecording(btn.dataset.action);
     });
+  }
+
+  if (els.converterEnabledToggle) {
+    els.converterEnabledToggle.onchange = async () => {
+      const enabled = els.converterEnabledToggle.checked;
+      await saveSetting(CONVERTER_ENABLED_KEY, enabled);
+      const tabId = await getActiveTabId();
+      if (tabId) try { await api.tabs.sendMessage(tabId, { type: 'IBD_CONVERTER_TOGGLE', payload: { enabled } }); } catch (_) { }
+    };
+  }
+  if (els.converterToolbarToggle) {
+    els.converterToolbarToggle.onchange = async () => {
+      const visible = els.converterToolbarToggle.checked;
+      await saveSetting(CONVERTER_TOOLBAR_KEY, visible);
+      const tabId = await getActiveTabId();
+      if (tabId) try { await api.tabs.sendMessage(tabId, { type: 'IBD_CONVERTER_TOOLBAR_TOGGLE', payload: { visible } }); } catch (_) { }
+    };
+  }
+  if (els.converterFormat) els.converterFormat.onchange = () => saveSetting(CONVERTER_FORMAT_KEY, els.converterFormat.value);
+  if (els.converterQuality) {
+    els.converterQuality.oninput = () => { if (els.converterQualityValue) els.converterQualityValue.textContent = els.converterQuality.value; };
+    els.converterQuality.onchange = () => saveSetting(CONVERTER_QUALITY_KEY, Number(els.converterQuality.value));
+  }
+  if (els.converterAutoDownloadToggle) els.converterAutoDownloadToggle.onchange = () => saveSetting(CONVERTER_AUTO_DOWNLOAD_KEY, els.converterAutoDownloadToggle.checked);
+  
+  if (els.languageSelect) {
+    els.languageSelect.onchange = () => {
+      const lang = els.languageSelect.value;
+      saveSetting(LANGUAGE_KEY, lang);
+      applyLanguage(lang);
+    };
   }
 
   api.storage.onChanged.addListener((changes, area) => {
