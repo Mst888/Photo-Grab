@@ -943,3 +943,200 @@ img[data-ibd-selected] {
   font-size: 11px;
   color: var(--ibd-text-muted);
 }
+
+/* ===== CONVERTER TOOLBAR ===== */
+#ibd-converter-toolbar-v1 {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 999999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.ibd-converter-toolbar {
+  background: var(--ibd-bg-card);
+  border: 1px solid var(--ibd-border);
+  border-radius: var(--ibd-border-radius-lg);
+  box-shadow: var(--ibd-shadow-card);
+  width: 280px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.ibd-converter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--ibd-bg-stat);
+  border-bottom: 1px solid var(--ibd-border);
+}
+
+.ibd-converter-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ibd-text-main);
+}
+
+.ibd-converter-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--ibd-text-muted);
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.ibd-converter-close:hover {
+  background: var(--ibd-border);
+  color: var(--ibd-text-main);
+}
+
+.ibd-converter-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ibd-converter-upload-btn {
+  background: var(--ibd-primary);
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: var(--ibd-border-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ibd-converter-upload-btn:hover {
+  background: var(--ibd-primary-hover);
+  transform: translateY(-1px);
+}
+
+.ibd-converter-preview {
+  text-align: center;
+  padding: 8px;
+  background: var(--ibd-bg-stat);
+  border-radius: var(--ibd-border-radius-sm);
+  border: 1px solid var(--ibd-border);
+}
+
+.ibd-converter-controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background: var(--ibd-bg-stat);
+  border-radius: var(--ibd-border-radius-sm);
+}
+
+.ibd-converter-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ibd-text-sub);
+}
+
+.ibd-converter-select {
+  background: var(--ibd-bg-input);
+  border: 1px solid var(--ibd-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--ibd-text-main);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ibd-converter-select:hover {
+  border-color: var(--ibd-border-hover);
+}
+
+.ibd-converter-select:focus {
+  border-color: var(--ibd-primary);
+}
+
+.ibd-converter-range {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ibd-border);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ibd-converter-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ibd-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ibd-converter-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.ibd-converter-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ibd-primary);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.ibd-converter-range::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+.ibd-converter-quality-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ibd-primary);
+  text-align: right;
+}
+
+.ibd-converter-convert-btn {
+  background: linear-gradient(135deg, var(--ibd-primary) 0%, var(--ibd-primary-hover) 100%);
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: var(--ibd-border-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+.ibd-converter-convert-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.ibd-converter-convert-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}

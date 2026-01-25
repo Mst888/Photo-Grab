@@ -2,7 +2,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Mst888/Photo-Grab?style=flat-square)](https://github.com/Mst888/Photo-Grab/releases) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/Mst888/Photo-Grab/blob/main/LICENSE) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-☕-ff813f?style=flat-square&logo=buymeacoffee)](https://buymeacoffee.com/mst888)
 
-A fast, elegant browser extension for power users who want to pick, organize, and download images from the web in bulk — without the fuss.
+A fast, elegant **Firefox-only** browser extension for power users who want to pick, organize, and download images from the web in bulk — without the fuss.
 
 ---
 
@@ -40,7 +40,9 @@ Photo-Grab was built for people who collect images — researchers, designers, a
 
 ## 🚀 Quick Start
 
-1. Install the extension from your browser's developer mode (load unpacked) or from the releases page:
+**Note: This extension is designed exclusively for Mozilla Firefox.**
+
+1. Install the extension in Firefox from developer mode (load unpacked) or from the releases page:
    - [Releases](https://github.com/Mst888/Photo-Grab/releases)
 2. Open a webpage with images.
 3. Click the toolbar icon, choose your selection mode (area / same-size / filters), then download as ZIP or individually.

@@ -1,7 +1,7 @@
 (() => {
-  const api = typeof browser !== 'undefined' ? browser : chrome;
+  const api = browser;
 
-  // For compatibility with some MV3 environments (like Chrome)
+  // Load JSZip for Firefox
   try {
     if (typeof JSZip === 'undefined' && typeof importScripts !== 'undefined') {
       importScripts('jszip.min.js');
@@ -277,5 +277,77 @@
       })();
       return true;
     }
+
+    if (msg.type === 'IBD_CONVERT_IMAGE') {
+      (async () => {
+        try {
+          const { dataUrl, format, quality, filename, autoDownload } = msg.payload;
+          
+          const response = await fetch(dataUrl);
+          const blob = await response.blob();
+          
+          const convertedBlob = await convertImageFormat(blob, format, quality);
+          
+          const originalName = filename.replace(/\.[^/.]+$/, '');
+          const newExt = format === 'jpeg' ? 'jpg' : format;
+          const newFilename = `${originalName}_converted.${newExt}`;
+          
+          if (autoDownload) {
+            const blobUrl = URL.createObjectURL(convertedBlob);
+            await api.downloads.download({
+              url: blobUrl,
+              filename: newFilename,
+              saveAs: false
+            });
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+          }
+          
+          sendResponse({ ok: true, filename: newFilename });
+        } catch (error) {
+          console.error('Conversion error:', error);
+          sendResponse({ ok: false, error: error.message });
+        }
+      })();
+      return true;
+    }
   });
+
+  async function convertImageFormat(blob, format, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          
+          const mimeType = format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp';
+          
+          canvas.toBlob((convertedBlob) => {
+            URL.revokeObjectURL(url);
+            if (convertedBlob) {
+              resolve(convertedBlob);
+            } else {
+              reject(new Error('Conversion failed'));
+            }
+          }, mimeType, quality);
+        } catch (error) {
+          URL.revokeObjectURL(url);
+          reject(error);
+        }
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Failed to load image'));
+      };
+      
+      img.src = url;
+    });
+  }
 })();

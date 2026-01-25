@@ -328,6 +328,53 @@
       <div class="ibd-divider"></div>
 
       <div class="ibd-section-header">
+        <div class="ibd-section-title">🔄 Photo Converter</div>
+      </div>
+
+      <div class="ibd-toggle-mini">
+        <label class="ibd-label-mini">Enable Photo Converter</label>
+        <label class="ibd-switch-mini">
+          <input id="converterEnabledToggle" type="checkbox" />
+          <span class="ibd-slider-mini"></span>
+        </label>
+      </div>
+
+      <div class="ibd-toggle-mini">
+        <label class="ibd-label-mini">Show Converter Toolbar</label>
+        <label class="ibd-switch-mini">
+          <input id="converterToolbarToggle" type="checkbox" />
+          <span class="ibd-slider-mini"></span>
+        </label>
+      </div>
+
+      <div class="ibd-field">
+        <label class="ibd-label" for="converterFormat">Default Output Format</label>
+        <select id="converterFormat" class="ibd-select">
+          <option value="jpeg">JPEG</option>
+          <option value="png">PNG</option>
+          <option value="webp">WEBP</option>
+        </select>
+      </div>
+
+      <div class="ibd-field">
+        <label class="ibd-label" for="converterQuality">Converter Quality</label>
+        <div class="ibd-quality-row">
+          <input id="converterQuality" type="range" min="60" max="100" step="1" value="90" />
+          <div class="ibd-quality-value"><span id="converterQualityValue">90</span>%</div>
+        </div>
+      </div>
+
+      <div class="ibd-toggle-mini">
+        <label class="ibd-label-mini">Auto-download after conversion</label>
+        <label class="ibd-switch-mini">
+          <input id="converterAutoDownloadToggle" type="checkbox" checked />
+          <span class="ibd-slider-mini"></span>
+        </label>
+      </div>
+
+      <div class="ibd-divider"></div>
+
+      <div class="ibd-section-header">
         <div class="ibd-section-title">⌨️ Keyboard Shortcuts</div>
       </div>
 
@@ -343,7 +390,7 @@
         <div class="ibd-shortcut-item">
           <span class="ibd-label-mini">Toggle Selection Mode</span>
           <div class="ibd-shortcut-row">
-            <kbd id="kb-toggleSelection" class="ibd-kbd">Alt+S</kbd>
+            <kbd id="kb-toggleSelection" class="ibd-kbd">Alt+E</kbd>
             <button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleSelection" title="Edit">✎</button>
           </div>
         </div>
@@ -357,7 +404,7 @@
         <div class="ibd-shortcut-item">
           <span class="ibd-label-mini">Clear Selection</span>
           <div class="ibd-shortcut-row">
-            <kbd id="kb-clearSelection" class="ibd-kbd">Alt+C</kbd>
+            <kbd id="kb-clearSelection" class="ibd-kbd">Alt+X</kbd>
             <button class="ibd-icon-btn ibd-edit-shortcut" data-action="clearSelection" title="Edit">✎</button>
           </div>
         </div>
@@ -389,19 +436,43 @@
             <button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleLowPerf" title="Edit">✎</button>
           </div>
         </div>
+        <div class="ibd-shortcut-item">
+          <span class="ibd-label-mini">Toggle Converter Toolbar</span>
+          <div class="ibd-shortcut-row">
+            <kbd id="kb-toggleConverter" class="ibd-kbd">Alt+C</kbd>
+            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleConverter" title="Edit">✎</button>
+          </div>
+        </div>
 
-        <button id="resetShortcutsBtn" class="ibd-btn ibd-btn-ghost w-100" style="margin-top: 12px;">Reset to
-          Defaults</button>
+        <button id="resetShortcutsBtn" class="ibd-btn ibd-btn-ghost w-100" style="margin-top: 12px;">Reset to Defaults</button>
+      </div>
+
+      <div class="ibd-divider"></div>
+
+      <div class="ibd-section-header">
+        <div class="ibd-section-title" data-i18n="languageSettings">🌐 Language Settings</div>
+      </div>
+
+      <div class="ibd-field">
+        <label class="ibd-label" for="languageSelect" data-i18n="selectLanguage">Select Language</label>
+        <select id="languageSelect" class="ibd-select">
+          <option value="en">English</option>
+          <option value="tr">Türkçe</option>
+          <option value="ru">Русский</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+        </select>
       </div>
 
       <div class="ibd-divider"></div>
 
       <div class="ibd-field">
-        <label class="ibd-label">Project Repository</label>
-        <button id="githubBtn" class="ibd-btn ibd-btn-ghost w-100" type="button">➡️ Open GitHub</button>
+        <label class="ibd-label" data-i18n="projectRepository">Project Repository</label>
+        <button id="githubBtn" class="ibd-btn ibd-btn-ghost w-100" type="button" data-i18n="openGitHub">➡️ Open GitHub</button>
       </div>
 
-      <div class="ibd-subtitle text-center">Version 1.7.1 | mst888</div>
+      <div class="ibd-subtitle text-center">Version 1.8.0 | mst888</div>
     </div>
   </div>
 
@@ -417,6 +488,7 @@
     </div>
   </div>
 
+  <script src="languages.js"></script>
   <script src="popup.js"></script>
 </body>
 

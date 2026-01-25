@@ -1,0 +1,33 @@
+# Node modules and dependencies
+node_modules/
+package.json
+package-lock.json
+
+# Development files
+tasks.md
+KURULUM.txt
+.git/
+.gitignore
+
+# Build artifacts
+web-ext-artifacts/
+
+# Documentation (keep README.md and CHANGELOG.md in the package)
+# README.md
+# CHANGELOG.md
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.log
