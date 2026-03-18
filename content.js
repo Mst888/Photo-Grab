@@ -564,6 +564,7 @@
       sendResponse({ ok: true });
     } else if (msg.type === 'IBD_CONVERTER_TOOLBAR_TOGGLE') {
       settingsCache.converterToolbarVisible = !!msg.payload?.visible;
+      if (msg.payload?.forceEnabled) settingsCache.converterEnabled = true;
       if (settingsCache.converterEnabled && settingsCache.converterToolbarVisible) {
         ensureConverterToolbar();
       } else {

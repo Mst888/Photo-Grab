@@ -1,5 +1,64 @@
 # Changelog
 
+## [1.8.3] - 2026-03-05
+
+### ✨ Yeni Özellikler
+
+**📜 İndirme Geçmişi (Download History)**
+- Her başarılı indirmede otomatik kayıt (URL, dosya adı, sayfa adresi, tarih/saat)
+- Home sekmesinde History tabından görüntüleme, thumbnail önizleme
+- Tek tıkla bireysel kayıt silme, Tümünü Temizle butonu
+- Maksimum 200 kayıt (en eski otomatik silinir)
+
+**📁 Koleksiyonlar (Collections)**
+- İsimli koleksiyon oluşturma, seçili görselleri tek tıkla ekleme
+- Koleksiyon detay görünümü — içindeki görseller galeri olarak listelenir
+- Koleksiyondan görsel kaldırma ve koleksiyon silme
+- Home sekmesinde Collections tabından erişim
+
+**☁️ Bulut Yükleme (Cloud Upload) — Placeholder**
+- Google Drive, Dropbox, OneDrive için OAuth bağlantı butonları (`browser.identity.launchWebAuthFlow`)
+- Settings → Cloud sekmesinden erişim
+- Henüz tamamlanmamış, placeholder olarak bırakıldı
+
+**🎨 Özel Tema Rengi (Custom Primary Color)**
+- Settings → Theme sekmesinde Primary Color renk seçici
+- Seçilen renk anlık olarak tüm UI'a uygulanır (`--ibd-primary` CSS değişkeni)
+- Renk tercihi storage'a kaydedilir; Reset butonu ile varsayılana dönme
+
+**🖌️ Özelleştirilmiş Tema (Custom Theme Builder)**
+- Tema seçiciye 7. seçenek olarak "Custom" eklendi
+- 6 renk parametresi anlık olarak düzenlenebilir: Accent, Background, Card, Text, Subtitle, Border
+- Her renk değişikliği canlı olarak tüm UI'a yansır
+- 5 hazır preset: **Midnight**, **Forest**, **Sunset**, **Ocean**, **Rose**
+- Tema tercihleri storage'a kaydedilir; Reset butonu ile varsayılana dönme
+- Custom tema aktifken Primary Color seçici gizlenir, Custom Builder gösterilir
+
+**🧭 Walkthrough Rehberi**
+- İlk açılışta otomatik 3 adımlı rehber (Görsel Seçimi → İndirme → Geçmiş/Koleksiyonlar)
+- Header'daki ? butonu ile istediğinde tekrar açılabilir
+- Dot indikatör, Skip ve backdrop ile kapanma
+
+**🌍 Çoklu Dil Desteği Genişletildi**
+- History, Collections, Cloud, Walkthrough, Custom Color için 30+ yeni key
+- Tüm 6 dile (TR/EN/RU/FR/ES/DE) eklendi
+
+### 🐛 Bug Fixes
+- **Converter Bar**: `converterEnabled=false` iken toolbar açılmıyordu — `forceEnabled` payload + storage sync ile düzeltildi
+- **History Kayıt**: Capture listener kaldırıldı, kayıt `requestDownload()` içinde `res.ok` sonrasına taşındı
+- **Collections Index Drift**: Silme/detay işlemleri index yerine koleksiyon adına göre yapılıyor
+- **Collections Null Guard**: `collectionDetail` null kontrolü eklendi
+- **addToCollection URL**: `img.src || img` yerine `typeof url === 'string'` kontrolü
+
+### 📦 Yeni Storage Key'leri
+- `ibd_downloadHistory_v1` — İndirme geçmişi (max 200)
+- `ibd_collections_v1` — Koleksiyonlar listesi
+- `ibd_customPrimaryColor_v1` — Özel ana renk (hex)
+- `ibd_customThemeVars_v1` — Custom tema renk değerleri (accent, bgPopup, bgCard, textMain, textSub, border)
+- `ibd_walkthroughSeen_v1` — Walkthrough gösterildi mi
+
+---
+
 ## [1.8.2] - 2026-01-31
 
 ### 🐛 Bug Fixes
