@@ -1,489 +1,516 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Photo-Grab</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body class="ibd-popup">
-  <!-- PRIMARY VIEW: Home -->
+
+  <!-- ===================== HOME VIEW ===================== -->
   <div id="homeView">
     <div class="ibd-card">
       <header class="ibd-header">
         <div class="ibd-title">
           <img src="icon.svg" class="ibd-logo" alt="logo" />
-          <span>Photo-Grab Pro</span>
-          <button id="settingsBtn" class="ibd-icon-btn" title="Settings">⚙️</button>
+          <span>Photo-Grab</span>
+          <button id="helpBtn" class="ibd-icon-btn" title="Help / Walkthrough" style="margin-right:2px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
+          <button id="settingsBtn" class="ibd-icon-btn" title="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
         </div>
         <p class="ibd-subtitle">Professional Image Downloader</p>
       </header>
 
-      <div class="ibd-stat">
-        <span class="ibd-stat-label">Images Selected</span>
-        <span id="selectedCount" class="ibd-stat-value">0</span>
+      <!-- Home Nav Tabs -->
+      <div class="ibd-home-tabs">
+        <button class="ibd-home-tab ibd-home-tab--active" data-tab="main">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          Grab
+        </button>
+        <button class="ibd-home-tab" data-tab="history">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          History
+        </button>
+        <button class="ibd-home-tab" data-tab="collections">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          Collections
+        </button>
       </div>
 
-      <div class="ibd-toggle" style="margin-top: 12px; margin-bottom: 0;">
-        <div class="ibd-toggle-info">
-          <div class="ibd-toggle-title">Extension Status</div>
-          <div class="ibd-toggle-subtitle">Enable selection on page</div>
+      <!-- TAB: Main -->
+      <div id="homeTab-main" class="ibd-home-tab-panel">
+        <div class="ibd-stat">
+          <span class="ibd-stat-label">Images Selected</span>
+          <span id="selectedCount" class="ibd-stat-value">0</span>
         </div>
-        <label class="ibd-switch">
-          <input id="enabledToggle" type="checkbox" checked />
-          <span class="ibd-slider"></span>
-        </label>
+
+        <div class="ibd-toggle" style="margin-top: 10px;">
+          <div class="ibd-toggle-info">
+            <div class="ibd-toggle-title">Extension Active</div>
+            <div class="ibd-toggle-subtitle">Enable image selection on page</div>
+          </div>
+          <label class="ibd-switch">
+            <input id="enabledToggle" type="checkbox" checked />
+            <span class="ibd-slider"></span>
+          </label>
+        </div>
+
+        <div class="ibd-field">
+          <label class="ibd-label" for="outputFormat">Output Format</label>
+          <select id="outputFormat" class="ibd-select">
+            <option value="original">Original</option>
+            <option value="jpeg">JPEG</option>
+            <option value="png">PNG</option>
+            <option value="webp">WEBP</option>
+          </select>
+        </div>
+
+        <div class="ibd-field" id="qualityField">
+          <label class="ibd-label" for="quality">Quality</label>
+          <div class="ibd-quality-row">
+            <input id="quality" type="range" min="60" max="100" step="1" value="90" />
+            <div class="ibd-quality-value"><span id="qualityValue">90</span>%</div>
+          </div>
+        </div>
+
+        <div class="ibd-field">
+          <label class="ibd-label" for="selectionMode">Selection Mode</label>
+          <select id="selectionMode" class="ibd-select">
+            <option value="normal">Normal</option>
+            <option value="area">Area Selection</option>
+            <option value="sameSize">Same Size</option>
+            <option value="large">Large Images</option>
+          </select>
+        </div>
+
+        <div id="aspectRatioSection" class="ibd-field">
+          <label class="ibd-label" for="aspectRatio">Aspect Ratio</label>
+          <select id="aspectRatio" class="ibd-select">
+            <option value="original">Original</option>
+            <option value="1:1">1:1 Square</option>
+            <option value="4:3">4:3 Standard</option>
+            <option value="16:9">16:9 Widescreen</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <div id="customRatioField" class="ibd-field-row" style="display:none;">
+          <div class="ibd-field-half">
+            <label class="ibd-label-mini">Width Ratio</label>
+            <input type="number" id="customRatioW" class="ibd-input-mini" value="1" min="1" />
+          </div>
+          <div class="ibd-field-half">
+            <label class="ibd-label-mini">Height Ratio</label>
+            <input type="number" id="customRatioH" class="ibd-input-mini" value="1" min="1" />
+          </div>
+        </div>
+
+        <div id="cropModeField" class="ibd-field" style="display:none;">
+          <label class="ibd-label" for="cropMode">Crop Method</label>
+          <select id="cropMode" class="ibd-select">
+            <option value="fill">Fill (Center Crop)</option>
+            <option value="fit">Fit (Contain)</option>
+          </select>
+        </div>
+
+        <div id="previewGallerySection" class="ibd-field">
+          <label class="ibd-label">Selection Preview</label>
+          <div id="previewGallery" class="ibd-preview-gallery"></div>
+          <div id="previewDisabledMsg" class="ibd-status-msg" style="display:none;">
+            Preview disabled in low performance mode
+          </div>
+        </div>
+
+        <!-- Photo Converter Toggle -->
+        <div class="ibd-toggle" style="margin-top:10px; margin-bottom:0;">
+          <div class="ibd-toggle-info">
+            <div class="ibd-toggle-title">Photo Converter</div>
+            <div class="ibd-toggle-subtitle">Show converter toolbar on page</div>
+          </div>
+          <label class="ibd-switch">
+            <input id="converterToolbarToggle" type="checkbox" />
+            <span class="ibd-slider"></span>
+          </label>
+        </div>
+
+        <div class="ibd-actions">
+          <button id="downloadBtn" class="ibd-btn ibd-btn-primary" type="button">↓ Download</button>
+          <button id="clearBtn" class="ibd-btn ibd-btn-ghost" type="button">✕ Clear</button>
+        </div>
+        <div class="ibd-status" id="status" aria-live="polite"></div>
       </div>
 
-      <div class="ibd-field">
-        <label class="ibd-label" for="outputFormat">Output Format</label>
-        <select id="outputFormat" class="ibd-select">
-          <option value="original">Original</option>
-          <option value="jpeg">JPEG</option>
-          <option value="png">PNG</option>
-          <option value="webp">WEBP</option>
-        </select>
-      </div>
-
-      <div class="ibd-field" id="qualityField">
-        <label class="ibd-label" for="quality">Quality (JPEG/WEBP)</label>
-        <div class="ibd-quality-row">
-          <input id="quality" type="range" min="60" max="100" step="1" value="90" />
-          <div class="ibd-quality-value"><span id="qualityValue">90</span>%</div>
+      <!-- TAB: History -->
+      <div id="homeTab-history" class="ibd-home-tab-panel" style="display:none;">
+        <div class="ibd-history-toolbar">
+          <span class="ibd-label" style="margin:0;">Download History</span>
+          <button id="clearHistoryBtn" class="ibd-btn ibd-btn-ghost" style="padding:4px 10px;font-size:11px;">Clear All</button>
+        </div>
+        <div id="historyList" class="ibd-history-list">
+          <div class="ibd-empty-state">No downloads yet</div>
         </div>
       </div>
 
-      <div class="ibd-field">
-        <label class="ibd-label" for="selectionMode">Selection Mode</label>
-        <select id="selectionMode" class="ibd-select">
-          <option value="normal">Normal Style</option>
-          <option value="area">Area Selection Mode</option>
-          <option value="sameSize">Same Size Mode</option>
-          <option value="large">Large Images Mode</option>
-        </select>
-      </div>
-
-      <div id="aspectRatioSection" class="ibd-field">
-        <label class="ibd-label" for="aspectRatio">Aspect Ratio</label>
-        <select id="aspectRatio" class="ibd-select">
-          <option value="original">Original</option>
-          <option value="1:1">1:1 Square</option>
-          <option value="4:3">4:3 Standard</option>
-          <option value="16:9">16:9 Widescreen</option>
-          <option value="custom">Custom Ratio</option>
-        </select>
-      </div>
-
-      <div id="customRatioField" class="ibd-field-row" style="display: none;">
-        <div class="ibd-field-half">
-          <label class="ibd-label-mini">Width Ratio</label>
-          <input type="number" id="customRatioW" class="ibd-input-mini" value="1" min="1" />
+      <!-- TAB: Collections -->
+      <div id="homeTab-collections" class="ibd-home-tab-panel" style="display:none;">
+        <div class="ibd-collections-toolbar">
+          <input id="newCollectionInput" type="text" class="ibd-input-mini" placeholder="New collection name..." style="flex:1;" />
+          <button id="addCollectionBtn" class="ibd-btn ibd-btn-primary" style="padding:5px 10px;font-size:11px;">+ Add</button>
         </div>
-        <div class="ibd-field-half">
-          <label class="ibd-label-mini">Height Ratio</label>
-          <input type="number" id="customRatioH" class="ibd-input-mini" value="1" min="1" />
+        <div id="collectionList" class="ibd-collection-list">
+          <div class="ibd-empty-state">No collections yet</div>
+        </div>
+        <div id="collectionDetail" class="ibd-collection-detail" style="display:none;">
+          <div class="ibd-collection-detail-header">
+            <button id="collectionBackBtn" class="ibd-icon-btn" style="font-size:13px;">←</button>
+            <span id="collectionDetailName" class="ibd-toggle-title"></span>
+            <span id="collectionDetailCount" class="ibd-text-badge"></span>
+          </div>
+          <div id="collectionDetailGallery" class="ibd-preview-gallery" style="max-height:160px;"></div>
+          <button id="addToCollectionBtn" class="ibd-btn ibd-btn-primary w-100" style="margin-top:8px;font-size:12px;">Add Selected Images Here</button>
         </div>
       </div>
 
-      <div id="cropModeField" class="ibd-field" style="display: none;">
-        <label class="ibd-label" for="cropMode">Crop Method</label>
-        <select id="cropMode" class="ibd-select">
-          <option value="fill">Fill (Center Crop)</option>
-          <option value="fit">Fit (Contain)</option>
-        </select>
-      </div>
-
-      <div id="previewGallerySection" class="ibd-field">
-        <label class="ibd-label">Selection Gallery</label>
-        <div id="previewGallery" class="ibd-preview-gallery"></div>
-        <div id="previewDisabledMsg" class="ibd-status-msg" style="display: none;">
-          Preview disabled for performance
-        </div>
-      </div>
-
-      <div class="ibd-actions">
-        <button id="downloadBtn" class="ibd-btn ibd-btn-primary" type="button">Download Selected</button>
-        <button id="clearBtn" class="ibd-btn ibd-btn-ghost" type="button">Clear Selection</button>
-      </div>
-
-      <div class="ibd-status" id="status" aria-live="polite"></div>
     </div>
   </div>
 
-  <!-- SECONDARY VIEW: Settings -->
-  <div id="settingsView" style="display: none;">
-    <div class="ibd-card">
-      <header class="ibd-header">
-        <div class="ibd-title">
-          <button id="backBtn" class="ibd-icon-btn" title="Back">←</button>
-          <span>⚙️ Settings</span>
-        </div>
-      </header>
+  <!-- ===================== SETTINGS VIEW ===================== -->
+  <div id="settingsView" style="display:none;">
+    <div class="ibd-settings-layout">
 
-      <div class="ibd-field">
-        <label class="ibd-label">UI Theme</label>
-        <div class="ibd-theme-toggle">
-          <input type="radio" id="themeLight" name="theme" value="light" checked />
-          <label for="themeLight" class="ibd-toggle-item" title="Light Theme">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="5" />
-              <line x1="12" y1="1" x2="12" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="23" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-              <line x1="1" y1="12" x2="3" y2="12" />
-              <line x1="21" y1="12" x2="23" y2="12" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-            </svg>
-          </label>
-          <input type="radio" id="themeDark" name="theme" value="dark" />
-          <label for="themeDark" class="ibd-toggle-item" title="Dark Theme">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
-          </label>
-          <input type="radio" id="themeBlue" name="theme" value="blue" />
-          <label for="themeBlue" class="ibd-toggle-item" title="Blue Theme">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-            </svg>
-          </label>
-          <input type="radio" id="themePink" name="theme" value="pink" />
-          <label for="themePink" class="ibd-toggle-item" title="Pink Theme">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path
-                d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-            </svg>
-          </label>
+      <!-- Sidebar nav -->
+      <nav class="ibd-settings-nav">
+        <button id="backBtn" class="ibd-settings-back" title="Back">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="ibd-nav-item ibd-nav-item--active" data-section="all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <span>All</span>
+        </button>
+        <button class="ibd-nav-item" data-section="appearance">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span>Theme</span>
+        </button>
+        <button class="ibd-nav-item" data-section="behavior">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Popup</span>
+        </button>
+        <button class="ibd-nav-item" data-section="download">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download</span>
+        </button>
+        <button class="ibd-nav-item" data-section="converter">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          <span>Converter</span>
+        </button>
+        <button class="ibd-nav-item" data-section="cloud">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          <span>Cloud</span>
+        </button>
+        <button class="ibd-nav-item" data-section="shortcuts">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg>
+          <span>Keys</span>
+        </button>
+        <button class="ibd-nav-item" data-section="language">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>Lang</span>
+        </button>
+      </nav>
 
+      <!-- Settings content panels -->
+      <div class="ibd-settings-content">
 
-          <input type="radio" id="themeSpotify" name="theme" value="spotify" />
-          <label for="themeSpotify" class="ibd-toggle-item" title="Spotify Theme">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M8 14.5c2.5-1 5.5-1 8 0M8 11.5c3-1 6-1 9 0M9 8.5c2-1 4-1 6 0" />
-            </svg>
-          </label>
-
-          <input type="radio" id="themeGray" name="theme" value="gray" />
-          <label for="themeGray" class="ibd-toggle-item" title="Gray Theme">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z" />
-            </svg>
-          </label>
-          <div class="ibd-toggle-thumb"></div>
-        </div>
-      </div>
-
-      <div class="ibd-field">
-        <label class="ibd-label">Popup Behavior</label>
-        <div class="ibd-toggle-mini">
-          <label class="ibd-label-mini">Keep popup open after action</label>
-          <label class="ibd-switch-mini">
-            <input id="stayOpenToggle" type="checkbox" />
-            <span class="ibd-slider-mini"></span>
-          </label>
-        </div>
-        <div class="ibd-toggle-mini">
-          <label class="ibd-label-mini">Clear selection on disable</label>
-          <label class="ibd-switch-mini">
-            <input id="clearOnDisableToggle" type="checkbox" />
-            <span class="ibd-slider-mini"></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="ibd-field">
-        <label class="ibd-label">Popup Size</label>
-        <select id="popupSizePreset" class="ibd-select">
-          <option value="small">Small (300px)</option>
-          <option value="medium">Medium (380px)</option>
-          <option value="large">Large (450px)</option>
-          <option value="custom">Custom Dimensions</option>
-        </select>
-        <div id="customSizeFields" class="ibd-field-row" style="display: none;">
-          <div class="ibd-field-half">
-            <label class="ibd-label-mini">Width (px)</label>
-            <input type="number" id="popupWidth" class="ibd-input-mini" value="380" min="300" max="800" />
+        <!-- SECTION: Appearance / Theme -->
+        <div id="settingsSection-appearance" class="ibd-settings-section">
+          <div class="ibd-settings-section-title">UI Theme</div>
+          <div class="ibd-theme-toggle" style="margin-top:8px;">
+            <input type="radio" id="themeLight" name="theme" value="light" checked />
+            <label for="themeLight" class="ibd-toggle-item" title="Light">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </label>
+            <input type="radio" id="themeDark" name="theme" value="dark" />
+            <label for="themeDark" class="ibd-toggle-item" title="Dark">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </label>
+            <input type="radio" id="themeBlue" name="theme" value="blue" />
+            <label for="themeBlue" class="ibd-toggle-item" title="Blue">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+            </label>
+            <input type="radio" id="themePink" name="theme" value="pink" />
+            <label for="themePink" class="ibd-toggle-item" title="Pink">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </label>
+            <input type="radio" id="themeSpotify" name="theme" value="spotify" />
+            <label for="themeSpotify" class="ibd-toggle-item" title="Spotify">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14.5c2.5-1 5.5-1 8 0M8 11.5c3-1 6-1 9 0M9 8.5c2-1 4-1 6 0"/></svg>
+            </label>
+            <input type="radio" id="themeGray" name="theme" value="gray" />
+            <label for="themeGray" class="ibd-toggle-item" title="Gray">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>
+            </label>
+            <input type="radio" id="themeCustom" name="theme" value="custom" />
+            <label for="themeCustom" class="ibd-toggle-item" title="Custom">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2 12h3M19 12h3M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+            </label>
+            <div class="ibd-toggle-thumb"></div>
           </div>
-          <div class="ibd-field-half">
-            <label class="ibd-label-mini">Height (px)</label>
-            <input type="number" id="popupHeight" class="ibd-input-mini" value="500" min="400" max="600" />
+
+          <!-- Custom Theme Builder (shown only when Custom theme is active) -->
+          <div id="customThemeBuilder" class="ibd-custom-theme-builder" style="display:none;">
+            <div class="ibd-custom-theme-title">
+              <span>Custom Theme</span>
+              <span id="customThemePresetLabel" style="font-size:9px;color:var(--ibd-text-muted);font-weight:500;text-transform:none;letter-spacing:0;">Quick presets →</span>
+            </div>
+            <div class="ibd-custom-theme-preset-row">
+              <button class="ibd-custom-theme-preset" data-preset="midnight">Midnight</button>
+              <button class="ibd-custom-theme-preset" data-preset="forest">Forest</button>
+              <button class="ibd-custom-theme-preset" data-preset="sunset">Sunset</button>
+              <button class="ibd-custom-theme-preset" data-preset="ocean">Ocean</button>
+              <button class="ibd-custom-theme-preset" data-preset="rose">Rose</button>
+            </div>
+            <div class="ibd-custom-theme-grid" style="margin-top:10px;">
+              <div class="ibd-custom-theme-field">
+                <label for="ctAccent">Accent Color</label>
+                <div class="ibd-custom-theme-swatch">
+                  <input type="color" id="ctAccent" value="#5b5ef4" />
+                  <span id="ctAccentVal">#5b5ef4</span>
+                </div>
+              </div>
+              <div class="ibd-custom-theme-field">
+                <label for="ctBgPopup">Background</label>
+                <div class="ibd-custom-theme-swatch">
+                  <input type="color" id="ctBgPopup" value="#f4f6fb" />
+                  <span id="ctBgPopupVal">#f4f6fb</span>
+                </div>
+              </div>
+              <div class="ibd-custom-theme-field">
+                <label for="ctBgCard">Card</label>
+                <div class="ibd-custom-theme-swatch">
+                  <input type="color" id="ctBgCard" value="#ffffff" />
+                  <span id="ctBgCardVal">#ffffff</span>
+                </div>
+              </div>
+              <div class="ibd-custom-theme-field">
+                <label for="ctTextMain">Text</label>
+                <div class="ibd-custom-theme-swatch">
+                  <input type="color" id="ctTextMain" value="#0f172a" />
+                  <span id="ctTextMainVal">#0f172a</span>
+                </div>
+              </div>
+              <div class="ibd-custom-theme-field">
+                <label for="ctTextSub">Subtitle</label>
+                <div class="ibd-custom-theme-swatch">
+                  <input type="color" id="ctTextSub" value="#4b5675" />
+                  <span id="ctTextSubVal">#4b5675</span>
+                </div>
+              </div>
+              <div class="ibd-custom-theme-field">
+                <label for="ctBorder">Border</label>
+                <div class="ibd-custom-theme-swatch">
+                  <input type="color" id="ctBorder" value="#e3e8f0" />
+                  <span id="ctBorderVal">#e3e8f0</span>
+                </div>
+              </div>
+            </div>
+            <div class="ibd-custom-theme-actions">
+              <button id="customThemeResetBtn" class="ibd-btn ibd-btn-ghost" style="flex:1;padding:5px;font-size:11px;">Reset</button>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="ibd-divider"></div>
-
-      <div class="ibd-field">
-        <label class="ibd-label">Save Location</label>
-
-        <div class="ibd-toggle-mini">
-          <label class="ibd-label-mini">Always ask for location</label>
-          <label class="ibd-switch-mini">
-            <input id="askLocationToggle" type="checkbox" />
-            <span class="ibd-slider-mini"></span>
-          </label>
-        </div>
-
-        <div class="ibd-toggle-mini">
-          <label class="ibd-label-mini">Save to subfolder</label>
-          <label class="ibd-switch-mini">
-            <input id="useSubfolderToggle" type="checkbox" />
-            <span class="ibd-slider-mini"></span>
-          </label>
-        </div>
-
-        <div id="subfolderField" style="display: none;">
-          <input type="text" id="folderName" class="ibd-input-mini" placeholder="e.g. vacation_photos" />
-        </div>
-      </div>
-
-      <div class="ibd-divider"></div>
-
-      <div class="ibd-section-header">
-        <div class="ibd-section-title">Download Settings</div>
-      </div>
-
-      <div class="ibd-field">
-        <label class="ibd-label" for="namingMode">Filename Mode</label>
-        <select id="namingMode" class="ibd-select">
-          <option value="auto">Automatic (Title_001)</option>
-          <option value="sequential">Sequential (Img_001)</option>
-          <option value="custom">Custom Template</option>
-        </select>
-      </div>
-
-      <div id="customNameField" class="ibd-field" style="display: none;">
-        <label class="ibd-label" for="customTemplate">Template (Use {site}, {title}, {index})</label>
-        <input type="text" id="customTemplate" class="ibd-input-mini" placeholder="{site}_{title}_{index}" />
-      </div>
-
-      <div class="ibd-toggle-mini">
-        <label class="ibd-label-mini">Download as ZIP Bundle</label>
-        <label class="ibd-switch-mini">
-          <input type="checkbox" id="zipDownloadToggle" />
-          <span class="ibd-slider-mini"></span>
-        </label>
-      </div>
-
-      <div class="ibd-toggle-mini">
-        <label class="ibd-label-mini">Low Performance Mode</label>
-        <label class="ibd-switch-mini">
-          <input id="lowPerfToggle" type="checkbox" />
-          <span class="ibd-slider-mini"></span>
-        </label>
-      </div>
-
-      <div class="ibd-toggle-mini">
-        <label class="ibd-label-mini">Image Previews</label>
-        <label class="ibd-switch-mini">
-          <input id="previewToggle" type="checkbox" checked />
-          <span class="ibd-slider-mini"></span>
-        </label>
-      </div>
-
-      <div class="ibd-toggle-mini">
-        <label class="ibd-label-mini">UI Overlays</label>
-        <label class="ibd-switch-mini">
-          <input id="overlayToggle" type="checkbox" checked />
-          <span class="ibd-slider-mini"></span>
-        </label>
-      </div>
-
-      <div class="ibd-field-row">
-        <div class="ibd-field-half">
-          <label class="ibd-label-mini">Batch Size</label>
-          <input type="number" id="batchSize" class="ibd-input-mini" value="5" min="1" max="20" />
-        </div>
-        <div class="ibd-field-half">
-          <label class="ibd-label-mini">Delay (ms)</label>
-          <input type="number" id="downloadDelay" class="ibd-input-mini" value="100" min="0" step="50" />
-        </div>
-      </div>
-
-      <div class="ibd-field-row">
-        <div class="ibd-field-half">
-          <label class="ibd-label-mini">Max Select</label>
-          <input type="number" id="maxSelection" class="ibd-input-mini" value="50" min="1" />
-        </div>
-        <div class="ibd-field-half">
-          <label class="ibd-label-mini">Lazy Process</label>
-          <label class="ibd-switch-mini">
-            <input id="lazyProcessToggle" type="checkbox" />
-            <span class="ibd-slider-mini"></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="ibd-divider"></div>
-
-      <div class="ibd-section-header">
-        <div class="ibd-section-title">🔄 Photo Converter</div>
-      </div>
-
-      <div class="ibd-toggle-mini">
-        <label class="ibd-label-mini">Enable Photo Converter</label>
-        <label class="ibd-switch-mini">
-          <input id="converterEnabledToggle" type="checkbox" />
-          <span class="ibd-slider-mini"></span>
-        </label>
-      </div>
-
-      <div class="ibd-toggle-mini">
-        <label class="ibd-label-mini">Show Converter Toolbar</label>
-        <label class="ibd-switch-mini">
-          <input id="converterToolbarToggle" type="checkbox" />
-          <span class="ibd-slider-mini"></span>
-        </label>
-      </div>
-
-      <div class="ibd-field">
-        <label class="ibd-label" for="converterFormat">Default Output Format</label>
-        <select id="converterFormat" class="ibd-select">
-          <option value="jpeg">JPEG</option>
-          <option value="png">PNG</option>
-          <option value="webp">WEBP</option>
-        </select>
-      </div>
-
-      <div class="ibd-field">
-        <label class="ibd-label" for="converterQuality">Converter Quality</label>
-        <div class="ibd-quality-row">
-          <input id="converterQuality" type="range" min="60" max="100" step="1" value="90" />
-          <div class="ibd-quality-value"><span id="converterQualityValue">90</span>%</div>
-        </div>
-      </div>
-
-      <div class="ibd-toggle-mini">
-        <label class="ibd-label-mini">Auto-download after conversion</label>
-        <label class="ibd-switch-mini">
-          <input id="converterAutoDownloadToggle" type="checkbox" checked />
-          <span class="ibd-slider-mini"></span>
-        </label>
-      </div>
-
-      <div class="ibd-divider"></div>
-
-      <div class="ibd-section-header">
-        <div class="ibd-section-title">⌨️ Keyboard Shortcuts</div>
-      </div>
-
-      <div class="ibd-toggle-mini">
-        <label class="ibd-label-mini">Enable shortcuts</label>
-        <label class="ibd-switch-mini">
-          <input id="shortcutsToggle" type="checkbox" checked />
-          <span class="ibd-slider-mini"></span>
-        </label>
-      </div>
-
-      <div id="shortcutsContainer" class="ibd-shortcuts-container">
-        <div class="ibd-shortcut-item">
-          <span class="ibd-label-mini">Toggle Selection Mode</span>
-          <div class="ibd-shortcut-row">
-            <kbd id="kb-toggleSelection" class="ibd-kbd">Alt+E</kbd>
-            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleSelection" title="Edit">✎</button>
-          </div>
-        </div>
-        <div class="ibd-shortcut-item">
-          <span class="ibd-label-mini">Select All Images</span>
-          <div class="ibd-shortcut-row">
-            <kbd id="kb-selectAll" class="ibd-kbd">Alt+A</kbd>
-            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="selectAll" title="Edit">✎</button>
-          </div>
-        </div>
-        <div class="ibd-shortcut-item">
-          <span class="ibd-label-mini">Clear Selection</span>
-          <div class="ibd-shortcut-row">
-            <kbd id="kb-clearSelection" class="ibd-kbd">Alt+X</kbd>
-            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="clearSelection" title="Edit">✎</button>
-          </div>
-        </div>
-        <div class="ibd-shortcut-item">
-          <span class="ibd-label-mini">Download Images</span>
-          <div class="ibd-shortcut-row">
-            <kbd id="kb-download" class="ibd-kbd">Alt+D</kbd>
-            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="download" title="Edit">✎</button>
-          </div>
-        </div>
-        <div class="ibd-shortcut-item">
-          <span class="ibd-label-mini">Download as ZIP</span>
-          <div class="ibd-shortcut-row">
-            <kbd id="kb-downloadZip" class="ibd-kbd">Alt+Z</kbd>
-            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="downloadZip" title="Edit">✎</button>
-          </div>
-        </div>
-        <div class="ibd-shortcut-item">
-          <span class="ibd-label-mini">Toggle Previews</span>
-          <div class="ibd-shortcut-row">
-            <kbd id="kb-togglePreview" class="ibd-kbd">Alt+P</kbd>
-            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="togglePreview" title="Edit">✎</button>
-          </div>
-        </div>
-        <div class="ibd-shortcut-item">
-          <span class="ibd-label-mini">Toggle Low Performance</span>
-          <div class="ibd-shortcut-row">
-            <kbd id="kb-toggleLowPerf" class="ibd-kbd">Alt+L</kbd>
-            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleLowPerf" title="Edit">✎</button>
-          </div>
-        </div>
-        <div class="ibd-shortcut-item">
-          <span class="ibd-label-mini">Toggle Converter Toolbar</span>
-          <div class="ibd-shortcut-row">
-            <kbd id="kb-toggleConverter" class="ibd-kbd">Alt+C</kbd>
-            <button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleConverter" title="Edit">✎</button>
+          <!-- Custom Primary Color (shown for non-custom themes) -->
+          <div id="primaryColorRow" class="ibd-custom-color-row" style="margin-top:12px;">
+            <label class="ibd-label-mini" data-i18n="customPrimaryColor">Primary Color</label>
+            <div class="ibd-color-picker-row">
+              <input type="color" id="customPrimaryColorInput" class="ibd-color-input" value="#5b5ef4" />
+              <button id="resetPrimaryColorBtn" class="ibd-btn ibd-btn-ghost" style="padding:4px 10px;font-size:11px;" data-i18n="resetColor">Reset</button>
+            </div>
           </div>
         </div>
 
-        <button id="resetShortcutsBtn" class="ibd-btn ibd-btn-ghost w-100" style="margin-top: 12px;">Reset to Defaults</button>
+        <!-- SECTION: Popup Behavior -->
+        <div id="settingsSection-behavior" class="ibd-settings-section" style="display:none;">
+          <div class="ibd-settings-section-title">Popup Behavior</div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Keep popup open after action</label><label class="ibd-switch-mini"><input id="stayOpenToggle" type="checkbox" /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Clear selection on disable</label><label class="ibd-switch-mini"><input id="clearOnDisableToggle" type="checkbox" /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-field">
+            <label class="ibd-label" for="popupSizePreset">Popup Size</label>
+            <select id="popupSizePreset" class="ibd-select"><option value="small">Small (300px)</option><option value="medium">Medium (380px)</option><option value="large">Large (450px)</option><option value="custom">Custom</option></select>
+            <div id="customSizeFields" class="ibd-field-row" style="display:none;">
+              <div class="ibd-field-half"><label class="ibd-label-mini">Width (px)</label><input type="number" id="popupWidth" class="ibd-input-mini" value="380" min="300" max="800" /></div>
+              <div class="ibd-field-half"><label class="ibd-label-mini">Height (px)</label><input type="number" id="popupHeight" class="ibd-input-mini" value="500" min="400" max="600" /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: Download -->
+        <div id="settingsSection-download" class="ibd-settings-section" style="display:none;">
+          <div class="ibd-settings-section-title">Save Location</div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Always ask for save location</label><label class="ibd-switch-mini"><input id="askLocationToggle" type="checkbox" /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Save to subfolder</label><label class="ibd-switch-mini"><input id="useSubfolderToggle" type="checkbox" /><span class="ibd-slider-mini"></span></label></div>
+          <div id="subfolderField" style="display:none;margin-top:4px;"><input type="text" id="folderName" class="ibd-input-mini" placeholder="e.g. vacation_photos" /></div>
+          <div class="ibd-divider"></div>
+          <div class="ibd-settings-section-title">Filename &amp; Options</div>
+          <div class="ibd-field">
+            <label class="ibd-label" for="namingMode">Filename Mode</label>
+            <select id="namingMode" class="ibd-select"><option value="auto">Automatic (Title_001)</option><option value="sequential">Sequential (Img_001)</option><option value="custom">Custom Template</option></select>
+          </div>
+          <div id="customNameField" class="ibd-field" style="display:none;">
+            <label class="ibd-label">Template — {site}, {title}, {index}</label>
+            <input type="text" id="customTemplate" class="ibd-input-mini" placeholder="{site}_{title}_{index}" />
+          </div>
+          <div class="ibd-toggle-mini" style="margin-top:8px;"><label class="ibd-label-mini">Download as ZIP bundle</label><label class="ibd-switch-mini"><input type="checkbox" id="zipDownloadToggle" /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Low performance mode</label><label class="ibd-switch-mini"><input id="lowPerfToggle" type="checkbox" /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Image previews</label><label class="ibd-switch-mini"><input id="previewToggle" type="checkbox" checked /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">UI overlays on page</label><label class="ibd-switch-mini"><input id="overlayToggle" type="checkbox" checked /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-field-row">
+            <div class="ibd-field-half"><label class="ibd-label-mini">Batch size</label><input type="number" id="batchSize" class="ibd-input-mini" value="5" min="1" max="20" /></div>
+            <div class="ibd-field-half"><label class="ibd-label-mini">Delay (ms)</label><input type="number" id="downloadDelay" class="ibd-input-mini" value="100" min="0" step="50" /></div>
+          </div>
+          <div class="ibd-field-row">
+            <div class="ibd-field-half"><label class="ibd-label-mini">Max select</label><input type="number" id="maxSelection" class="ibd-input-mini" value="50" min="1" /></div>
+            <div class="ibd-field-half"><label class="ibd-label-mini" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">Lazy process<label class="ibd-switch-mini"><input id="lazyProcessToggle" type="checkbox" /><span class="ibd-slider-mini"></span></label></label></div>
+          </div>
+        </div>
+
+        <!-- SECTION: Converter -->
+        <div id="settingsSection-converter" class="ibd-settings-section" style="display:none;">
+          <div class="ibd-settings-section-title">Photo Converter</div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Enable photo converter</label><label class="ibd-switch-mini"><input id="converterEnabledToggle" type="checkbox" /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Show converter toolbar</label><label class="ibd-switch-mini"><input id="converterToolbarToggleSettings" type="checkbox" /><span class="ibd-slider-mini"></span></label></div>
+          <div class="ibd-field">
+            <label class="ibd-label" for="converterFormat">Default output format</label>
+            <select id="converterFormat" class="ibd-select"><option value="jpeg">JPEG</option><option value="png">PNG</option><option value="webp">WEBP</option></select>
+          </div>
+          <div class="ibd-field">
+            <label class="ibd-label" for="converterQuality">Converter quality</label>
+            <div class="ibd-quality-row">
+              <input id="converterQuality" type="range" min="60" max="100" step="1" value="90" />
+              <div class="ibd-quality-value"><span id="converterQualityValue">90</span>%</div>
+            </div>
+          </div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Auto-download after conversion</label><label class="ibd-switch-mini"><input id="converterAutoDownloadToggle" type="checkbox" checked /><span class="ibd-slider-mini"></span></label></div>
+        </div>
+
+        <!-- SECTION: Cloud Upload -->
+        <div id="settingsSection-cloud" class="ibd-settings-section" style="display:none;">
+          <div class="ibd-settings-section-title">Cloud Upload</div>
+          <p class="ibd-cloud-desc">Upload downloaded images directly to cloud storage. Tap a provider to connect.</p>
+          <div class="ibd-cloud-providers">
+            <button class="ibd-cloud-btn" id="cloudGdrive" data-provider="gdrive">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 87.3 78" fill="none"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L28.15 51H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="M43.65 25L29.25 0c-1.35.8-2.5 1.9-3.3 3.3L1.2 46.5c-.8 1.4-1.2 2.95-1.2 4.5h28.15z" fill="#00ac47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.15l5.9 11.65z" fill="#ea4335"/><path d="M43.65 25L57.85 0c-1.35-.8-2.9-1.25-4.5-1.25H33.9c-1.6 0-3.15.45-4.65 1.25z" fill="#00832d"/><path d="M59.15 51H28.15L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2H69.1c1.6 0 3.1-.4 4.5-1.2z" fill="#2684fc"/><path d="M73.4 26.55l-12.5-21.7C60.1 3.45 58.95 2.35 57.6 1.55L43.65 26.5 59.15 51h28.1c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+              Google Drive
+            </button>
+            <button class="ibd-cloud-btn" id="cloudDropbox" data-provider="dropbox">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#0061ff"><path d="M6 2L0 6l6 4-6 4 6 4 6-4-6-4 6-4zm12 0l-6 4 6 4-6 4 6 4 6-4-6-4 6-4zM6 16.5L12 20l6-3.5-6-4z"/></svg>
+              Dropbox
+            </button>
+            <button class="ibd-cloud-btn" id="cloudOnedrive" data-provider="onedrive">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0078d4" stroke-width="1.5"><path d="M21.2 15.2A4.5 4.5 0 0 0 17 9a4.5 4.5 0 0 0-4-2.4A5 5 0 0 0 4 11.5 3.5 3.5 0 0 0 5.5 18H21a3 3 0 0 0 .2-2.8z"/></svg>
+              OneDrive
+            </button>
+          </div>
+          <div id="cloudStatus" class="ibd-cloud-status"></div>
+          <p class="ibd-cloud-note">Cloud upload opens the provider's OAuth page in a new tab. Images are sent after authentication.</p>
+        </div>
+
+        <!-- SECTION: Shortcuts -->
+        <div id="settingsSection-shortcuts" class="ibd-settings-section" style="display:none;">
+          <div class="ibd-settings-section-title">Keyboard Shortcuts</div>
+          <div class="ibd-toggle-mini"><label class="ibd-label-mini">Enable shortcuts</label><label class="ibd-switch-mini"><input id="shortcutsToggle" type="checkbox" checked /><span class="ibd-slider-mini"></span></label></div>
+          <div id="shortcutsContainer" class="ibd-shortcuts-container">
+            <div class="ibd-shortcut-item"><span class="ibd-label-mini">Toggle Selection</span><div class="ibd-shortcut-row"><kbd id="kb-toggleSelection" class="ibd-kbd">Alt+E</kbd><button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleSelection" title="Edit">✎</button></div></div>
+            <div class="ibd-shortcut-item"><span class="ibd-label-mini">Select All</span><div class="ibd-shortcut-row"><kbd id="kb-selectAll" class="ibd-kbd">Alt+A</kbd><button class="ibd-icon-btn ibd-edit-shortcut" data-action="selectAll" title="Edit">✎</button></div></div>
+            <div class="ibd-shortcut-item"><span class="ibd-label-mini">Clear Selection</span><div class="ibd-shortcut-row"><kbd id="kb-clearSelection" class="ibd-kbd">Alt+X</kbd><button class="ibd-icon-btn ibd-edit-shortcut" data-action="clearSelection" title="Edit">✎</button></div></div>
+            <div class="ibd-shortcut-item"><span class="ibd-label-mini">Download</span><div class="ibd-shortcut-row"><kbd id="kb-download" class="ibd-kbd">Alt+D</kbd><button class="ibd-icon-btn ibd-edit-shortcut" data-action="download" title="Edit">✎</button></div></div>
+            <div class="ibd-shortcut-item"><span class="ibd-label-mini">Download ZIP</span><div class="ibd-shortcut-row"><kbd id="kb-downloadZip" class="ibd-kbd">Alt+Z</kbd><button class="ibd-icon-btn ibd-edit-shortcut" data-action="downloadZip" title="Edit">✎</button></div></div>
+            <div class="ibd-shortcut-item"><span class="ibd-label-mini">Toggle Previews</span><div class="ibd-shortcut-row"><kbd id="kb-togglePreview" class="ibd-kbd">Alt+P</kbd><button class="ibd-icon-btn ibd-edit-shortcut" data-action="togglePreview" title="Edit">✎</button></div></div>
+            <div class="ibd-shortcut-item"><span class="ibd-label-mini">Low Perf Mode</span><div class="ibd-shortcut-row"><kbd id="kb-toggleLowPerf" class="ibd-kbd">Alt+L</kbd><button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleLowPerf" title="Edit">✎</button></div></div>
+            <div class="ibd-shortcut-item"><span class="ibd-label-mini">Converter Toolbar</span><div class="ibd-shortcut-row"><kbd id="kb-toggleConverter" class="ibd-kbd">Alt+C</kbd><button class="ibd-icon-btn ibd-edit-shortcut" data-action="toggleConverter" title="Edit">✎</button></div></div>
+            <button id="resetShortcutsBtn" class="ibd-btn ibd-btn-ghost w-100" style="margin-top:8px;">Reset to Defaults</button>
+          </div>
+        </div>
+
+        <!-- SECTION: Language -->
+        <div id="settingsSection-language" class="ibd-settings-section" style="display:none;">
+          <div class="ibd-settings-section-title" data-i18n="languageSettings">Language</div>
+          <div class="ibd-field">
+            <label class="ibd-label" for="languageSelect" data-i18n="selectLanguage">Select Language</label>
+            <select id="languageSelect" class="ibd-select">
+              <option value="en">English</option>
+              <option value="tr">Türkçe</option>
+              <option value="ru">Русский</option>
+              <option value="fr">Français</option>
+              <option value="es">Español</option>
+              <option value="de">Deutsch</option>
+            </select>
+          </div>
+          <div class="ibd-divider"></div>
+          <div class="ibd-field">
+            <label class="ibd-label" data-i18n="projectRepository">Project</label>
+            <button id="githubBtn" class="ibd-btn ibd-btn-ghost w-100" type="button" data-i18n="openGitHub">Open GitHub Repository</button>
+          </div>
+          <div class="ibd-subtitle text-center" style="margin-top:10px;">Version 1.8.3 · mst888</div>
+        </div>
+
+      </div><!-- /ibd-settings-content -->
+    </div><!-- /ibd-settings-layout -->
+  </div>
+
+  <!-- Walkthrough Overlay -->
+  <div id="walkthroughOverlay" class="ibd-walkthrough-overlay" style="display:none;">
+    <div class="ibd-walkthrough-card">
+      <div class="ibd-walkthrough-header">
+        <span class="ibd-walkthrough-logo">📷</span>
+        <span id="walkthroughTitle" class="ibd-walkthrough-title">Welcome to Photo-Grab!</span>
+        <button id="walkthroughSkipBtn" class="ibd-walkthrough-skip" data-i18n="walkthroughSkip">Skip</button>
       </div>
-
-      <div class="ibd-divider"></div>
-
-      <div class="ibd-section-header">
-        <div class="ibd-section-title" data-i18n="languageSettings">🌐 Language Settings</div>
+      <div class="ibd-walkthrough-steps">
+        <div class="ibd-walkthrough-step" data-step="0">
+          <div class="ibd-walkthrough-step-icon">🖼️</div>
+          <div class="ibd-walkthrough-step-title" data-i18n="walkthroughStep1Title">Select Images</div>
+          <div class="ibd-walkthrough-step-desc" data-i18n="walkthroughStep1Desc">Click images on any page to select them. Use the Extension Active toggle to enable selection mode.</div>
+        </div>
+        <div class="ibd-walkthrough-step" data-step="1" style="display:none;">
+          <div class="ibd-walkthrough-step-icon">⬇️</div>
+          <div class="ibd-walkthrough-step-title" data-i18n="walkthroughStep2Title">Download or Convert</div>
+          <div class="ibd-walkthrough-step-desc" data-i18n="walkthroughStep2Desc">Use the Download button for bulk downloads. Toggle Photo Converter to show the converter toolbar on the page.</div>
+        </div>
+        <div class="ibd-walkthrough-step" data-step="2" style="display:none;">
+          <div class="ibd-walkthrough-step-icon">📂</div>
+          <div class="ibd-walkthrough-step-title" data-i18n="walkthroughStep3Title">History &amp; Collections</div>
+          <div class="ibd-walkthrough-step-desc" data-i18n="walkthroughStep3Desc">View your download history in the History tab. Use Collections to organize images into categories.</div>
+        </div>
       </div>
-
-      <div class="ibd-field">
-        <label class="ibd-label" for="languageSelect" data-i18n="selectLanguage">Select Language</label>
-        <select id="languageSelect" class="ibd-select">
-          <option value="en">English</option>
-          <option value="tr">Türkçe</option>
-          <option value="ru">Русский</option>
-          <option value="fr">Français</option>
-          <option value="es">Español</option>
-          <option value="de">Deutsch</option>
-        </select>
+      <div class="ibd-walkthrough-dots">
+        <span class="ibd-walkthrough-dot ibd-walkthrough-dot--active" data-dot="0"></span>
+        <span class="ibd-walkthrough-dot" data-dot="1"></span>
+        <span class="ibd-walkthrough-dot" data-dot="2"></span>
       </div>
-
-      <div class="ibd-divider"></div>
-
-      <div class="ibd-field">
-        <label class="ibd-label" data-i18n="projectRepository">Project Repository</label>
-        <button id="githubBtn" class="ibd-btn ibd-btn-ghost w-100" type="button" data-i18n="openGitHub">➡️ Open GitHub</button>
-      </div>
-
-      <div class="ibd-subtitle text-center">Version 1.8.2 | mst888</div>
+      <button id="walkthroughNextBtn" class="ibd-btn ibd-btn-primary w-100" data-i18n="walkthroughNext">Next</button>
     </div>
   </div>
 
   <!-- Shortcut Recording Overlay -->
-  <div id="shortcutOverlay" class="ibd-recorder-overlay" style="display: none;">
+  <div id="shortcutOverlay" class="ibd-recorder-overlay" style="display:none;">
     <div class="ibd-recorder-card">
       <div class="ibd-recorder-title">Recording Shortcut</div>
       <div id="recorderActionName" class="ibd-recorder-action">Select All</div>
-      <div class="ibd-recorder-display">
-        <span id="recorderKeys">Press keys...</span>
-      </div>
+      <div class="ibd-recorder-display"><span id="recorderKeys">Press keys...</span></div>
       <div class="ibd-recorder-hint">Press Esc to cancel</div>
     </div>
   </div>
@@ -491,5 +518,4 @@
   <script src="languages.js"></script>
   <script src="popup.js"></script>
 </body>
-
 </html>

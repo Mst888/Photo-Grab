@@ -40,6 +40,8 @@
   const CONVERTER_QUALITY_KEY = 'ibd_converterQuality_v1';
   const CONVERTER_AUTO_DOWNLOAD_KEY = 'ibd_converterAutoDownload_v1';
   const LANGUAGE_KEY = 'ibd_language_v1';
+  const HISTORY_KEY = 'ibd_downloadHistory_v1';
+  const COLLECTIONS_KEY = 'ibd_collections_v1';
 
   const DEFAULT_SHORTCUTS = {
     toggleSelection: { key: 'e', alt: true, ctrl: false, shift: false },
@@ -106,6 +108,7 @@
     editShortcutBtns: document.querySelectorAll('.ibd-edit-shortcut'),
     converterEnabledToggle: document.getElementById('converterEnabledToggle'),
     converterToolbarToggle: document.getElementById('converterToolbarToggle'),
+    converterToolbarToggleSettings: document.getElementById('converterToolbarToggleSettings'),
     converterFormat: document.getElementById('converterFormat'),
     converterQuality: document.getElementById('converterQuality'),
     converterQualityValue: document.getElementById('converterQualityValue'),
@@ -138,7 +141,7 @@
   }
 
   function applyTheme(theme) {
-    const themes = ['light', 'dark', 'blue', 'pink', 'spotify', 'gray'];
+    const themes = ['light', 'dark', 'blue', 'pink', 'spotify', 'gray', 'custom'];
     themes.forEach(t => document.body.classList.remove(`ibd-theme-${t}`));
     if (theme && themes.includes(theme)) document.body.classList.add(`ibd-theme-${theme}`);
   }
@@ -247,6 +250,7 @@
     const theme = stored[THEME_KEY] || 'light';
     els.themeRadios.forEach(r => { if (r.value === theme) r.checked = true; });
     applyTheme(theme);
+    toggleCustomThemeBuilder(theme === 'custom');
 
     els.selectionMode.value = stored[MODE_KEY] || 'normal';
     els.namingMode.value = stored[NAMING_KEY] || 'auto';
@@ -269,6 +273,7 @@
 
     if (els.converterEnabledToggle) els.converterEnabledToggle.checked = !!stored[CONVERTER_ENABLED_KEY];
     if (els.converterToolbarToggle) els.converterToolbarToggle.checked = !!stored[CONVERTER_TOOLBAR_KEY];
+    if (els.converterToolbarToggleSettings) els.converterToolbarToggleSettings.checked = !!stored[CONVERTER_TOOLBAR_KEY];
     if (els.converterFormat) els.converterFormat.value = stored[CONVERTER_FORMAT_KEY] || 'jpeg';
     if (els.converterQuality) {
       els.converterQuality.value = String(clampQuality(stored[CONVERTER_QUALITY_KEY] ?? 90));
@@ -504,6 +509,19 @@
       console.log('IBD DEBUG: Response from background:', res);
       if (res && res.ok) {
         setStatus('Downloads started!');
+        // Record history
+        try {
+          const pageHostname = site;
+          for (const url of selection) {
+            await addHistoryEntry({
+              url: url,
+              thumb: url,
+              filename: url.split('/').pop().split('?')[0] || 'image',
+              page: pageHostname,
+              ts: Date.now()
+            });
+          }
+        } catch (_) {}
         setTimeout(() => {
           setStatus('');
           if (!els.stayOpenToggle?.checked) window.close();
@@ -663,12 +681,33 @@
       if (tabId) try { await api.tabs.sendMessage(tabId, { type: 'IBD_CONVERTER_TOGGLE', payload: { enabled } }); } catch (_) { }
     };
   }
+  async function applyConverterToolbarToggle(visible) {
+    await saveSetting(CONVERTER_TOOLBAR_KEY, visible);
+    // Toolbar açılınca converter'ı da enable et; kapatınca converter enabled durumuna dokunma
+    if (visible) {
+      await saveSetting(CONVERTER_ENABLED_KEY, true);
+      if (els.converterEnabledToggle) els.converterEnabledToggle.checked = true;
+    }
+    if (els.converterToolbarToggle) els.converterToolbarToggle.checked = visible;
+    if (els.converterToolbarToggleSettings) els.converterToolbarToggleSettings.checked = visible;
+    const tabId = await getActiveTabId();
+    if (tabId) {
+      try {
+        await api.tabs.sendMessage(tabId, {
+          type: 'IBD_CONVERTER_TOOLBAR_TOGGLE',
+          payload: { visible, forceEnabled: visible }
+        });
+      } catch (_) { }
+    }
+  }
   if (els.converterToolbarToggle) {
     els.converterToolbarToggle.onchange = async () => {
-      const visible = els.converterToolbarToggle.checked;
-      await saveSetting(CONVERTER_TOOLBAR_KEY, visible);
-      const tabId = await getActiveTabId();
-      if (tabId) try { await api.tabs.sendMessage(tabId, { type: 'IBD_CONVERTER_TOOLBAR_TOGGLE', payload: { visible } }); } catch (_) { }
+      await applyConverterToolbarToggle(els.converterToolbarToggle.checked);
+    };
+  }
+  if (els.converterToolbarToggleSettings) {
+    els.converterToolbarToggleSettings.onchange = async () => {
+      await applyConverterToolbarToggle(els.converterToolbarToggleSettings.checked);
     };
   }
   if (els.converterFormat) els.converterFormat.onchange = () => saveSetting(CONVERTER_FORMAT_KEY, els.converterFormat.value);
@@ -690,6 +729,604 @@
     if (area !== 'local') return;
     if (changes[STORAGE_KEY]) updateSelectedCount();
     if (changes[LOW_PERF_KEY]) updateLowPerfUI(!!changes[LOW_PERF_KEY].newValue);
+  });
+
+  // ===== SETTINGS SIDEBAR NAV =====
+  (function initSettingsNav() {
+    const navItems = document.querySelectorAll('.ibd-nav-item');
+    const sections = document.querySelectorAll('.ibd-settings-section');
+
+    function activateSection(target) {
+      navItems.forEach(b => b.classList.remove('ibd-nav-item--active'));
+      const activeBtn = [...navItems].find(b => b.dataset.section === target);
+      if (activeBtn) activeBtn.classList.add('ibd-nav-item--active');
+
+      if (target === 'all') {
+        sections.forEach(s => { s.style.display = ''; });
+      } else {
+        sections.forEach(s => {
+          s.style.display = s.id === 'settingsSection-' + target ? '' : 'none';
+        });
+      }
+    }
+
+    navItems.forEach(btn => {
+      btn.addEventListener('click', () => activateSection(btn.dataset.section));
+    });
+
+    // Default: show all
+    activateSection('all');
+  })();
+
+  // ===== HOME TABS =====
+  (function initHomeTabs() {
+    const tabs = document.querySelectorAll('.ibd-home-tab');
+    const panels = document.querySelectorAll('.ibd-home-tab-panel');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        tabs.forEach(t => t.classList.remove('ibd-home-tab--active'));
+        tab.classList.add('ibd-home-tab--active');
+        panels.forEach(p => {
+          p.style.display = p.id === 'homeTab-' + target ? '' : 'none';
+        });
+        if (target === 'history') renderHistory();
+        if (target === 'collections') renderCollections();
+      });
+    });
+  })();
+
+  // ===== HISTORY =====
+  async function getHistory() {
+    const s = await api.storage.local.get(HISTORY_KEY);
+    return s[HISTORY_KEY] || [];
+  }
+  async function saveHistory(list) {
+    await api.storage.local.set({ [HISTORY_KEY]: list });
+  }
+  async function addHistoryEntry(entry) {
+    const list = await getHistory();
+    list.unshift(entry);
+    if (list.length > 200) list.length = 200;
+    await saveHistory(list);
+  }
+
+  function renderHistory() {
+    const el = document.getElementById('historyList');
+    if (!el) return;
+    getHistory().then(list => {
+      if (!list.length) {
+        el.innerHTML = '<div class="ibd-empty-state">No downloads yet</div>';
+        return;
+      }
+      el.innerHTML = '';
+      list.forEach((item, i) => {
+        const row = document.createElement('div');
+        row.className = 'ibd-history-item';
+
+        const img = document.createElement('img');
+        img.className = 'ibd-history-thumb';
+        img.src = item.thumb || item.url;
+        img.onerror = () => { img.style.display = 'none'; };
+
+        const info = document.createElement('div');
+        info.className = 'ibd-history-info';
+
+        const urlEl = document.createElement('div');
+        urlEl.className = 'ibd-history-url';
+        urlEl.textContent = item.filename || item.url;
+        urlEl.title = item.url;
+
+        const meta = document.createElement('div');
+        meta.className = 'ibd-history-meta';
+        const d = new Date(item.ts);
+        meta.textContent = d.toLocaleDateString() + ' · ' + (item.page || '');
+
+        info.appendChild(urlEl);
+        info.appendChild(meta);
+
+        const del = document.createElement('button');
+        del.className = 'ibd-history-del';
+        del.textContent = '✕';
+        del.title = 'Remove';
+        const capturedTs = item.ts;
+        del.addEventListener('click', async () => {
+          const l = await getHistory();
+          const idx = l.findIndex(x => x.ts === capturedTs && x.url === item.url);
+          if (idx !== -1) l.splice(idx, 1);
+          await saveHistory(l);
+          renderHistory();
+        });
+
+        row.appendChild(img);
+        row.appendChild(info);
+        row.appendChild(del);
+        el.appendChild(row);
+      });
+    });
+  }
+
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  if (clearHistoryBtn) {
+    clearHistoryBtn.addEventListener('click', async () => {
+      await saveHistory([]);
+      renderHistory();
+    });
+  }
+
+  // History recording is handled inside requestDownload()
+
+  // ===== COLLECTIONS =====
+  async function getCollections() {
+    const s = await api.storage.local.get(COLLECTIONS_KEY);
+    return s[COLLECTIONS_KEY] || [];
+  }
+  async function saveCollections(list) {
+    await api.storage.local.set({ [COLLECTIONS_KEY]: list });
+  }
+
+  let activeCollectionIndex = null;
+
+  function renderCollections() {
+    const listEl = document.getElementById('collectionList');
+    const detailEl = document.getElementById('collectionDetail');
+    if (!listEl) return;
+    if (detailEl) detailEl.style.display = 'none';
+    listEl.style.display = 'flex';
+
+    getCollections().then(cols => {
+      if (!cols.length) {
+        listEl.innerHTML = '<div class="ibd-empty-state">No collections yet</div>';
+        return;
+      }
+      listEl.innerHTML = '';
+      cols.forEach((col, i) => {
+        const item = document.createElement('div');
+        item.className = 'ibd-collection-item';
+
+        const name = document.createElement('span');
+        name.className = 'ibd-collection-item-name';
+        name.textContent = col.name;
+
+        const actions = document.createElement('div');
+        actions.className = 'ibd-collection-item-actions';
+
+        const badge = document.createElement('span');
+        badge.className = 'ibd-text-badge';
+        badge.textContent = (col.images || []).length;
+
+        const del = document.createElement('button');
+        del.className = 'ibd-collection-del';
+        del.textContent = '✕';
+        del.title = 'Delete collection';
+        const capturedName = col.name;
+        del.addEventListener('click', async e => {
+          e.stopPropagation();
+          const list = await getCollections();
+          const idx = list.findIndex(c => c.name === capturedName);
+          if (idx !== -1) list.splice(idx, 1);
+          await saveCollections(list);
+          renderCollections();
+        });
+
+        actions.appendChild(badge);
+        actions.appendChild(del);
+        item.appendChild(name);
+        item.appendChild(actions);
+
+        item.addEventListener('click', () => openCollectionDetail(col.name));
+        listEl.appendChild(item);
+      });
+    });
+  }
+
+  function openCollectionDetail(colName) {
+    activeCollectionIndex = colName;
+    const listEl = document.getElementById('collectionList');
+    const detailEl = document.getElementById('collectionDetail');
+    const nameEl = document.getElementById('collectionDetailName');
+    const countEl = document.getElementById('collectionDetailCount');
+    const galleryEl = document.getElementById('collectionDetailGallery');
+    if (!detailEl || !listEl) return;
+
+    getCollections().then(cols => {
+      const col = cols.find(c => c.name === colName);
+      if (!col) return;
+      listEl.style.display = 'none';
+      detailEl.style.display = 'block';
+      if (nameEl) nameEl.textContent = col.name;
+      if (countEl) countEl.textContent = (col.images || []).length + ' imgs';
+      galleryEl.innerHTML = '';
+      (col.images || []).forEach(imgUrl => {
+        const wrap = document.createElement('div');
+        wrap.className = 'ibd-thumb-container';
+        const img = document.createElement('img');
+        img.className = 'ibd-thumb-img';
+        img.src = imgUrl;
+        img.onerror = () => { img.style.opacity = '0.3'; };
+        const rm = document.createElement('span');
+        rm.className = 'ibd-thumb-remove';
+        rm.textContent = '✕';
+        rm.addEventListener('click', async () => {
+          const list = await getCollections();
+          const target = list.find(c => c.name === colName);
+          if (target) {
+            const imgIdx = target.images.indexOf(imgUrl);
+            if (imgIdx !== -1) target.images.splice(imgIdx, 1);
+          }
+          await saveCollections(list);
+          openCollectionDetail(colName);
+        });
+        wrap.appendChild(img);
+        wrap.appendChild(rm);
+        galleryEl.appendChild(wrap);
+      });
+    });
+  }
+
+  const collectionBackBtn = document.getElementById('collectionBackBtn');
+  if (collectionBackBtn) {
+    collectionBackBtn.addEventListener('click', () => {
+      activeCollectionIndex = null;
+      renderCollections();
+    });
+  }
+
+  const addCollectionBtn = document.getElementById('addCollectionBtn');
+  const newCollectionInput = document.getElementById('newCollectionInput');
+  if (addCollectionBtn && newCollectionInput) {
+    addCollectionBtn.addEventListener('click', async () => {
+      const name = newCollectionInput.value.trim();
+      if (!name) return;
+      const list = await getCollections();
+      if (list.find(c => c.name === name)) return;
+      list.push({ name, images: [] });
+      await saveCollections(list);
+      newCollectionInput.value = '';
+      renderCollections();
+    });
+    newCollectionInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addCollectionBtn.click();
+    });
+  }
+
+  const addToCollectionBtn = document.getElementById('addToCollectionBtn');
+  if (addToCollectionBtn) {
+    addToCollectionBtn.addEventListener('click', async () => {
+      if (activeCollectionIndex === null) return;
+      const s = await api.storage.local.get(STORAGE_KEY);
+      const imgs = s[STORAGE_KEY] || [];
+      if (!imgs.length) { return; }
+      const list = await getCollections();
+      const col = list.find(c => c.name === activeCollectionIndex);
+      if (!col) return;
+      const existing = new Set(col.images || []);
+      imgs.forEach(url => {
+        if (typeof url === 'string' && !existing.has(url)) {
+          col.images.push(url);
+          existing.add(url);
+        }
+      });
+      await saveCollections(list);
+      openCollectionDetail(activeCollectionIndex);
+    });
+  }
+
+  // ===== CLOUD UPLOAD =====
+  // Each user authenticates with their OWN account via OAuth.
+  // You must register your own app on each provider's developer console
+  // and replace the placeholder CLIENT_IDs below.
+  //
+  // Google Drive : console.cloud.google.com  → OAuth 2.0 Client ID (Web/Extension)
+  // Dropbox      : dropbox.com/developers/apps → App key
+  // OneDrive     : portal.azure.com → App registrations → Application (client) ID
+  //
+  // The redirect URI for Firefox extensions must be:
+  //   https://<extension-id>.extensions.allizom.org/
+  // Use browser.identity.getRedirectURL() to get it at runtime.
+
+  const CLOUD_CLIENT_IDS = {
+    gdrive:   'YOUR_GOOGLE_CLIENT_ID',
+    dropbox:  'YOUR_DROPBOX_APP_KEY',
+    onedrive: 'YOUR_MICROSOFT_CLIENT_ID'
+  };
+
+  function buildAuthUrl(provider, redirectUri) {
+    const enc = encodeURIComponent;
+    if (provider === 'gdrive') {
+      return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${enc(CLOUD_CLIENT_IDS.gdrive)}&redirect_uri=${enc(redirectUri)}&response_type=token&scope=${enc('https://www.googleapis.com/auth/drive.file')}`;
+    }
+    if (provider === 'dropbox') {
+      return `https://www.dropbox.com/oauth2/authorize?client_id=${enc(CLOUD_CLIENT_IDS.dropbox)}&redirect_uri=${enc(redirectUri)}&response_type=token`;
+    }
+    if (provider === 'onedrive') {
+      return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${enc(CLOUD_CLIENT_IDS.onedrive)}&redirect_uri=${enc(redirectUri)}&response_type=token&scope=${enc('files.readwrite offline_access')}`;
+    }
+    return null;
+  }
+
+  document.querySelectorAll('.ibd-cloud-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const provider = btn.dataset.provider;
+      const statusEl = document.getElementById('cloudStatus');
+
+      if (CLOUD_CLIENT_IDS[provider].startsWith('YOUR_')) {
+        if (statusEl) statusEl.textContent = '⚠ Set up your ' + btn.querySelector('svg + *')?.textContent?.trim() + ' API key first.';
+        return;
+      }
+
+      try {
+        const redirectUri = browser.identity.getRedirectURL();
+        const authUrl = buildAuthUrl(provider, redirectUri);
+        if (statusEl) statusEl.textContent = 'Waiting for authorization...';
+
+        const responseUrl = await browser.identity.launchWebAuthFlow({ url: authUrl, interactive: true });
+        const hashParams = new URLSearchParams(new URL(responseUrl).hash.slice(1));
+        const token = hashParams.get('access_token');
+
+        if (token) {
+          btn.classList.add('ibd-cloud-connected');
+          if (statusEl) statusEl.textContent = '✓ Connected! Token ready for upload.';
+          await api.storage.local.set({ ['ibd_cloud_token_' + provider]: token });
+        } else {
+          if (statusEl) statusEl.textContent = 'Auth failed — no token received.';
+        }
+      } catch (err) {
+        if (statusEl) statusEl.textContent = 'Auth cancelled or failed.';
+      }
+    });
+  });
+
+  // ===== CUSTOM PRIMARY COLOR =====
+  const CUSTOM_COLOR_KEY = 'ibd_customPrimaryColor_v1';
+
+  function applyCustomPrimaryColor(color) {
+    if (color) {
+      document.documentElement.style.setProperty('--ibd-primary', color);
+      // Derive a lighter version for primary-light
+      document.documentElement.style.setProperty('--ibd-primary-light', color + '22');
+    } else {
+      document.documentElement.style.removeProperty('--ibd-primary');
+      document.documentElement.style.removeProperty('--ibd-primary-light');
+    }
+  }
+
+  (function initCustomColor() {
+    const colorInput = document.getElementById('customPrimaryColorInput');
+    const resetBtn = document.getElementById('resetPrimaryColorBtn');
+    if (!colorInput) return;
+
+    api.storage.local.get(CUSTOM_COLOR_KEY).then(s => {
+      const saved = s[CUSTOM_COLOR_KEY];
+      if (saved) {
+        colorInput.value = saved;
+        applyCustomPrimaryColor(saved);
+      }
+    });
+
+    colorInput.addEventListener('input', async () => {
+      const color = colorInput.value;
+      applyCustomPrimaryColor(color);
+      await api.storage.local.set({ [CUSTOM_COLOR_KEY]: color });
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', async () => {
+        colorInput.value = '#5b5ef4';
+        applyCustomPrimaryColor(null);
+        await api.storage.local.remove(CUSTOM_COLOR_KEY);
+      });
+    }
+  })();
+
+  // ===== CUSTOM THEME BUILDER =====
+  const CUSTOM_THEME_KEY = 'ibd_customThemeVars_v1';
+
+  const CUSTOM_THEME_PRESETS = {
+    midnight: { accent: '#818cf8', bgPopup: '#0d1117', bgCard: '#161b22', textMain: '#e6edf3', textSub: '#8b949e', border: '#30363d' },
+    forest:   { accent: '#22c55e', bgPopup: '#0f1f0f', bgCard: '#162116', textMain: '#dcfce7', textSub: '#86efac', border: '#166534' },
+    sunset:   { accent: '#f97316', bgPopup: '#1c0a00', bgCard: '#2d1200', textMain: '#fed7aa', textSub: '#fb923c', border: '#7c2d12' },
+    ocean:    { accent: '#38bdf8', bgPopup: '#0c1a2e', bgCard: '#0f2744', textMain: '#e0f2fe', textSub: '#7dd3fc', border: '#0e4a7a' },
+    rose:     { accent: '#fb7185', bgPopup: '#1c0010', bgCard: '#2a0018', textMain: '#ffe4e6', textSub: '#fda4af', border: '#9f1239' },
+  };
+
+  const CUSTOM_THEME_DEFAULT = {
+    accent: '#5b5ef4', bgPopup: '#f4f6fb', bgCard: '#ffffff',
+    textMain: '#0f172a', textSub: '#4b5675', border: '#e3e8f0'
+  };
+
+  const ctFields = [
+    { id: 'ctAccent',   valId: 'ctAccentVal',   prop: 'accent'   },
+    { id: 'ctBgPopup',  valId: 'ctBgPopupVal',  prop: 'bgPopup'  },
+    { id: 'ctBgCard',   valId: 'ctBgCardVal',   prop: 'bgCard'   },
+    { id: 'ctTextMain', valId: 'ctTextMainVal',  prop: 'textMain' },
+    { id: 'ctTextSub',  valId: 'ctTextSubVal',   prop: 'textSub'  },
+    { id: 'ctBorder',   valId: 'ctBorderVal',    prop: 'border'   },
+  ];
+
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function applyCustomThemeVars(vars) {
+    const root = document.documentElement;
+    root.style.setProperty('--ibd-custom-primary', vars.accent);
+    root.style.setProperty('--ibd-custom-primary-hover', vars.accent + 'cc');
+    root.style.setProperty('--ibd-custom-primary-light', hexToRgba(vars.accent, 0.12));
+    root.style.setProperty('--ibd-custom-bg-popup', vars.bgPopup);
+    root.style.setProperty('--ibd-custom-bg-card', vars.bgCard);
+    root.style.setProperty('--ibd-custom-bg-stat', vars.bgPopup);
+    root.style.setProperty('--ibd-custom-bg-section', vars.bgPopup);
+    root.style.setProperty('--ibd-custom-bg-toggle', vars.bgCard);
+    root.style.setProperty('--ibd-custom-bg-input', vars.bgCard);
+    root.style.setProperty('--ibd-custom-text-main', vars.textMain);
+    root.style.setProperty('--ibd-custom-text-sub', vars.textSub);
+    root.style.setProperty('--ibd-custom-text-muted', vars.textSub + '99');
+    root.style.setProperty('--ibd-custom-border', vars.border);
+    root.style.setProperty('--ibd-custom-border-hover', vars.accent);
+  }
+
+  function clearCustomThemeVars() {
+    const root = document.documentElement;
+    ['--ibd-custom-primary','--ibd-custom-primary-hover','--ibd-custom-primary-light',
+     '--ibd-custom-bg-popup','--ibd-custom-bg-card','--ibd-custom-bg-stat',
+     '--ibd-custom-bg-section','--ibd-custom-bg-toggle','--ibd-custom-bg-input',
+     '--ibd-custom-text-main','--ibd-custom-text-sub','--ibd-custom-text-muted',
+     '--ibd-custom-border','--ibd-custom-border-hover'
+    ].forEach(p => root.style.removeProperty(p));
+  }
+
+  function syncCustomThemeInputs(vars) {
+    ctFields.forEach(f => {
+      const inp = document.getElementById(f.id);
+      const lbl = document.getElementById(f.valId);
+      if (inp) inp.value = vars[f.prop] || CUSTOM_THEME_DEFAULT[f.prop];
+      if (lbl) lbl.textContent = vars[f.prop] || CUSTOM_THEME_DEFAULT[f.prop];
+    });
+  }
+
+  function toggleCustomThemeBuilder(isCustom) {
+    const builder = document.getElementById('customThemeBuilder');
+    const primaryRow = document.getElementById('primaryColorRow');
+    if (builder) builder.style.display = isCustom ? '' : 'none';
+    if (primaryRow) primaryRow.style.display = isCustom ? 'none' : '';
+  }
+
+  (function initCustomThemeBuilder() {
+    const builder = document.getElementById('customThemeBuilder');
+    if (!builder) return;
+
+    let currentVars = { ...CUSTOM_THEME_DEFAULT };
+
+    api.storage.local.get(CUSTOM_THEME_KEY).then(s => {
+      if (s[CUSTOM_THEME_KEY]) {
+        currentVars = { ...CUSTOM_THEME_DEFAULT, ...s[CUSTOM_THEME_KEY] };
+      }
+      syncCustomThemeInputs(currentVars);
+      const activeTheme = document.querySelector('input[name="theme"]:checked');
+      if (activeTheme && activeTheme.value === 'custom') {
+        applyCustomThemeVars(currentVars);
+        toggleCustomThemeBuilder(true);
+      }
+    });
+
+    async function saveAndApply(vars) {
+      currentVars = { ...vars };
+      syncCustomThemeInputs(currentVars);
+      applyCustomThemeVars(currentVars);
+      await api.storage.local.set({ [CUSTOM_THEME_KEY]: currentVars });
+    }
+
+    ctFields.forEach(f => {
+      const inp = document.getElementById(f.id);
+      const lbl = document.getElementById(f.valId);
+      if (!inp) return;
+      inp.addEventListener('input', async () => {
+        if (lbl) lbl.textContent = inp.value;
+        currentVars[f.prop] = inp.value;
+        await saveAndApply(currentVars);
+      });
+    });
+
+    document.querySelectorAll('.ibd-custom-theme-preset').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const preset = CUSTOM_THEME_PRESETS[btn.dataset.preset];
+        if (preset) await saveAndApply({ ...CUSTOM_THEME_DEFAULT, ...preset });
+      });
+    });
+
+    const resetBtn = document.getElementById('customThemeResetBtn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', async () => {
+        await saveAndApply({ ...CUSTOM_THEME_DEFAULT });
+      });
+    }
+
+    // Hook into theme radio changes to show/hide builder
+    document.querySelectorAll('input[name="theme"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const isCustom = radio.value === 'custom';
+        toggleCustomThemeBuilder(isCustom);
+        if (isCustom) {
+          applyCustomThemeVars(currentVars);
+        } else {
+          clearCustomThemeVars();
+        }
+      });
+    });
+  })();
+
+  // ===== WALKTHROUGH =====
+  const WALKTHROUGH_SEEN_KEY = 'ibd_walkthroughSeen_v1';
+  const WALKTHROUGH_TOTAL = 3;
+
+  (function initWalkthrough() {
+    const overlay   = document.getElementById('walkthroughOverlay');
+    const nextBtn   = document.getElementById('walkthroughNextBtn');
+    const skipBtn   = document.getElementById('walkthroughSkipBtn');
+    const helpBtn   = document.getElementById('helpBtn');
+    const steps     = document.querySelectorAll('.ibd-walkthrough-step');
+    const dots      = document.querySelectorAll('.ibd-walkthrough-dot');
+    if (!overlay) return;
+
+    let currentStep = 0;
+
+    function showStep(n) {
+      steps.forEach((s, i) => { s.style.display = i === n ? '' : 'none'; });
+      dots.forEach((d, i) => {
+        d.classList.toggle('ibd-walkthrough-dot--active', i === n);
+      });
+      if (nextBtn) {
+        nextBtn.textContent = n === WALKTHROUGH_TOTAL - 1
+          ? (window._ibdT ? window._ibdT('walkthroughDone') : 'Get Started!')
+          : (window._ibdT ? window._ibdT('walkthroughNext') : 'Next');
+      }
+      currentStep = n;
+    }
+
+    function openWalkthrough() {
+      currentStep = 0;
+      showStep(0);
+      overlay.style.display = 'flex';
+    }
+
+    function closeWalkthrough() {
+      overlay.style.display = 'none';
+      api.storage.local.set({ [WALKTHROUGH_SEEN_KEY]: true });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        if (currentStep < WALKTHROUGH_TOTAL - 1) {
+          showStep(currentStep + 1);
+        } else {
+          closeWalkthrough();
+        }
+      });
+    }
+
+    if (skipBtn) skipBtn.addEventListener('click', closeWalkthrough);
+
+    // ? button always opens walkthrough
+    if (helpBtn) helpBtn.addEventListener('click', openWalkthrough);
+
+    // Close on backdrop click
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeWalkthrough();
+    });
+
+    // Show on first open
+    api.storage.local.get(WALKTHROUGH_SEEN_KEY).then(s => {
+      if (!s[WALKTHROUGH_SEEN_KEY]) openWalkthrough();
+    });
+  })();
+
+  // Load custom color on startup
+  api.storage.local.get(CUSTOM_COLOR_KEY).then(s => {
+    if (s[CUSTOM_COLOR_KEY]) applyCustomPrimaryColor(s[CUSTOM_COLOR_KEY]);
   });
 
   init();
