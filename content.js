@@ -20,6 +20,8 @@
   const CONVERTER_FORMAT_KEY = 'ibd_converterDefaultFormat_v1';
   const CONVERTER_QUALITY_KEY = 'ibd_converterQuality_v1';
   const CONVERTER_AUTO_DOWNLOAD_KEY = 'ibd_converterAutoDownload_v1';
+  const MIN_WIDTH_KEY = 'ibd_minWidth_v1';
+  const MIN_HEIGHT_KEY = 'ibd_minHeight_v1';
 
   const DEFAULT_SHORTCUTS = {
     toggleSelection: { key: 'e', alt: true, ctrl: false, shift: false },
@@ -46,7 +48,9 @@
     converterToolbarVisible: false,
     converterFormat: 'jpeg',
     converterQuality: 90,
-    converterAutoDownload: true
+    converterAutoDownload: true,
+    minWidth: 0,
+    minHeight: 0
   };
 
   let areaRect = null;
@@ -114,6 +118,174 @@
       if (norm) return norm;
     }
     return null;
+  }
+
+  // --- PINTEREST MODE ---
+  function getPinterestHighResUrl(url) {
+    if (!url) return url;
+    // Pinterest CDN: /236x/ /474x/ /736x/ /originals/ /60x60/ etc.
+    return url
+      .replace(/\/\d+x\d*\//, '/originals/')
+      .replace(/\/\d+x\//, '/originals/');
+  }
+
+  function getPinterestVideoUrl(pinEl) {
+    // Pinterest renders video pins with a <video> tag; the real mp4 is in a <source>
+    // or directly in video.src. Pinterest also stores the URL in data attributes.
+    const video = pinEl.querySelector('video');
+    if (!video) return null;
+
+    // Check <source> children first — most reliable
+    const sources = video.querySelectorAll('source');
+    for (const src of sources) {
+      const s = src.getAttribute('src') || src.src;
+      if (s && !s.startsWith('blob:') && s.startsWith('http')) return s;
+    }
+
+    // Check video.src directly
+    const vsrc = video.getAttribute('src') || video.currentSrc;
+    if (vsrc && !vsrc.startsWith('blob:') && vsrc.startsWith('http')) return vsrc;
+
+    // Pinterest stores the CDN url in data-test-pin-id ancestor's data attributes
+    const pinData = pinEl.querySelector('[data-test-pin-id]');
+    if (pinData) {
+      const vid = pinData.getAttribute('data-video-url') || pinData.getAttribute('data-video');
+      if (vid) return vid;
+    }
+
+    return null;
+  }
+
+  function extractPinterestMediaFromPin(pinEl) {
+    if (!pinEl) return null;
+
+    // 1) Video pin
+    const videoUrl = getPinterestVideoUrl(pinEl);
+    if (videoUrl) return { url: videoUrl, type: 'video' };
+
+    // 2) Photo pin — prefer highest-res img
+    const imgs = Array.from(pinEl.querySelectorAll('img'));
+    // Sort by naturalWidth descending to get largest
+    const bestImg = imgs
+      .filter(img => img.src && !img.src.startsWith('data:') && img.src.startsWith('http'))
+      .sort((a, b) => (b.naturalWidth || 0) - (a.naturalWidth || 0))[0];
+
+    if (bestImg) {
+      const raw = getCandidateImgUrl(bestImg);
+      if (raw) return { url: getPinterestHighResUrl(raw), type: 'image' };
+    }
+
+    // 3) Background image fallback
+    const allEls = pinEl.querySelectorAll('*');
+    for (const el of allEls) {
+      const bg = window.getComputedStyle(el).backgroundImage;
+      const bgUrl = extractUrlFromBackgroundImage(bg);
+      if (bgUrl && bgUrl.includes('pinimg.com')) {
+        return { url: getPinterestHighResUrl(bgUrl), type: 'image' };
+      }
+    }
+
+    return null;
+  }
+
+  // --- YOUTUBE MODE ---
+  // Extracts the videoId from any YouTube anchor/element near the click target.
+  function getYouTubeVideoId(target) {
+    if (!target || target.nodeType !== 1) return null;
+
+    // 1) Walk up to find an anchor with a video URL
+    const anchor = target.closest('a[href]');
+    const tryParse = (href) => {
+      if (!href) return null;
+      try {
+        const u = new URL(href, location.href);
+        const host = u.hostname.replace(/^www\./, '');
+        if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+          if (u.pathname === '/watch') return u.searchParams.get('v');
+          const m = u.pathname.match(/^\/(?:shorts|embed|live)\/([A-Za-z0-9_-]{6,})/);
+          if (m) return m[1];
+        }
+        if (host === 'youtu.be') {
+          const m = u.pathname.match(/^\/([A-Za-z0-9_-]{6,})/);
+          if (m) return m[1];
+        }
+      } catch (_) {}
+      return null;
+    };
+    if (anchor) {
+      const id = tryParse(anchor.getAttribute('href'));
+      if (id) return id;
+    }
+
+    // 2) Fallback: thumbnail image src like https://i.ytimg.com/vi/<id>/...
+    const img = target.tagName === 'IMG' ? target : target.querySelector && target.querySelector('img');
+    if (img && img.src) {
+      const m = img.src.match(/\/vi(?:_webp)?\/([A-Za-z0-9_-]{6,})\//);
+      if (m) return m[1];
+    }
+
+    // 3) Fallback: walk ancestor for ytd-thumbnail / a#thumbnail
+    const ytAnchor = target.closest('a#thumbnail, ytd-thumbnail a, ytd-rich-grid-media a, ytd-compact-video-renderer a');
+    if (ytAnchor) {
+      const id = tryParse(ytAnchor.getAttribute('href'));
+      if (id) return id;
+    }
+
+    // 4) Current page (watch page) — clicking the player area
+    if (location.hostname.includes('youtube.com') && location.pathname === '/watch') {
+      const id = new URLSearchParams(location.search).get('v');
+      if (id) return id;
+    }
+
+    return null;
+  }
+
+  function buildYouTubeThumbUrl(videoId) {
+    // maxresdefault is highest; falls back if not found (we still try it first).
+    return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+  }
+
+  function findPinContainer(target) {
+    // Pinterest 2024+ DOM selectors — in order of specificity
+    const selectors = [
+      '[data-test-id="pin"]',
+      '[data-test-id="pinWrapper"]',
+      '[data-test-id="pin-visual"]',
+      '[data-test-id="closeup-pin"]',
+      '[data-pin-id]',
+      '[data-grid-item]',
+    ];
+    for (const sel of selectors) {
+      const el = target.closest(sel);
+      if (el) return el;
+    }
+    // Fallback: walk up max 10 levels, stop when we find pinimg.com img or video
+    let el = target;
+    for (let i = 0; i < 10; i++) {
+      if (!el.parentElement) break;
+      el = el.parentElement;
+      const hasVideo = el.querySelector('video');
+      const hasPinImg = el.querySelector('img[src*="pinimg.com"]');
+      if (hasVideo || hasPinImg) return el;
+    }
+    return null;
+  }
+
+  // Direct storage add for video URLs (bypass blobToDataUrl which only handles images)
+  async function addUrlDirectly(url) {
+    if (!settingsCache.enabled) return;
+    const norm = normalizeUrl(url);
+    if (!norm) return;
+    const selection = await getSelection();
+    const set = new Set(selection);
+    if (set.has(norm)) {
+      set.delete(norm);
+    } else {
+      if (set.size >= settingsCache.maxSelection) return;
+      set.add(norm);
+    }
+    await setSelection(Array.from(set));
+    syncHighlights();
   }
 
   async function getSelection() {
@@ -369,17 +541,57 @@
     if (target.closest(`[data-ibd-ui="1"], #${TOOLBAR_ID}`)) return;
     if (settingsCache.mode === 'area') return;
 
+    // YouTube cover/thumbnail mode
+    if (settingsCache.mode === 'youtube') {
+      const id = getYouTubeVideoId(target);
+      if (!id) {
+        console.log('[Photo-Grab] YouTube: no video id found near click target');
+        return;
+      }
+      e.preventDefault(); e.stopPropagation();
+      const url = buildYouTubeThumbUrl(id);
+      console.log('[Photo-Grab] YouTube cover:', url);
+      await addUrlDirectly(url);
+      return;
+    }
+
+    // Pinterest mode
+    if (settingsCache.mode === 'pinterest') {
+      const pinEl = findPinContainer(target);
+      if (!pinEl) {
+        console.log('[Photo-Grab] Pinterest: no pin container found for', target.tagName);
+        return;
+      }
+      const media = extractPinterestMediaFromPin(pinEl);
+      if (!media) {
+        console.log('[Photo-Grab] Pinterest: no media found in pin container');
+        return;
+      }
+      e.preventDefault(); e.stopPropagation();
+      console.log('[Photo-Grab] Pinterest media found:', media.type, media.url.substring(0, 100));
+      // Video: addUrlDirectly (skip blobToDataUrl which is image-only)
+      // Image: toggleUrl (handles blob: data URLs and highlights)
+      if (media.type === 'video') {
+        await addUrlDirectly(media.url);
+      } else {
+        await toggleUrl(media.url, target);
+      }
+      return;
+    }
+
     if (target.tagName === 'IMG') {
       if (settingsCache.mode === 'sameSize') {
         e.preventDefault(); e.stopPropagation();
         await handleSameSizeSelection(target);
         return;
       }
+      const w = target.naturalWidth || target.width;
+      const h = target.naturalHeight || target.height;
       if (settingsCache.mode === 'large') {
-        const w = target.naturalWidth || target.width;
-        const h = target.naturalHeight || target.height;
         if (w < 800 && h < 600) return;
       }
+      if (settingsCache.minWidth > 0 && w < settingsCache.minWidth) return;
+      if (settingsCache.minHeight > 0 && h < settingsCache.minHeight) return;
       e.preventDefault(); e.stopPropagation();
       await toggleUrl(getCandidateImgUrl(target), target);
     } else if (settingsCache.mode === 'normal') {
@@ -494,7 +706,8 @@
     convertBtn.onclick = async () => {
       if (!currentFile) return;
       const format = formatSelect.value;
-      const quality = parseInt(qualityRange.value) / 100;
+      // Send percentage (0-100). Background divides by 100 — don't pre-divide here.
+      const quality = parseInt(qualityRange.value, 10);
 
       const reader = new FileReader();
       reader.onload = async (e) => {
@@ -576,18 +789,45 @@
       syncHighlights();
       sendResponse({ ok: true });
     } else if (msg.type === 'IBD_SELECT_ALL') {
+      if (!settingsCache.enabled) {
+        sendResponse({ ok: false, error: 'Selection disabled' });
+        return;
+      }
       const imgs = document.querySelectorAll('img');
       const candidates = [];
+      // Use user-configured min size; 16px floor to avoid 1x1 tracking pixels.
+      const minW = Math.max(16, settingsCache.minWidth || 0);
+      const minH = Math.max(16, settingsCache.minHeight || 0);
       imgs.forEach(img => {
         const url = getCandidateImgUrl(img);
         const w = img.naturalWidth || img.width;
         const h = img.naturalHeight || img.height;
-        if (url && w >= 32 && h >= 32) candidates.push({ url, el: img });
+        if (!url || w < minW || h < minH) return;
+        // Respect 'large' mode if active
+        if (settingsCache.mode === 'large' && w < 800 && h < 600) return;
+        candidates.push({ url, el: img });
       });
       const current = await getSelection();
       const processed = await processUrls(candidates);
-      await setSelection([...current, ...processed]);
+      // Dedup against current selection
+      const merged = Array.from(new Set([...current, ...processed]));
+      await setSelection(merged);
       syncHighlights();
+      sendResponse({ ok: true, count: merged.length });
+    } else if (msg.type === 'IBD_UPDATE_MIN_SIZE') {
+      settingsCache.minWidth = Number(msg.payload?.minWidth) || 0;
+      settingsCache.minHeight = Number(msg.payload?.minHeight) || 0;
+      sendResponse({ ok: true });
+    } else if (msg.type === 'IBD_CONTEXT_DOWNLOAD') {
+      const url = msg.payload?.url;
+      if (url) {
+        const current = await getSelection();
+        const norm = await blobToDataUrl(normalizeUrl(url), null);
+        if (norm && !current.includes(norm)) {
+          await setSelection([...current, norm]);
+        }
+        api.runtime.sendMessage({ type: 'IBD_DOWNLOAD_REQUEST_FROM_PAGE' });
+      }
       sendResponse({ ok: true });
     }
   });
@@ -600,21 +840,26 @@
       case 'toggleSelection':
         await api.storage.local.set({ [ENABLED_KEY]: !settingsCache.enabled });
         break;
-      case 'selectAll':
+      case 'selectAll': {
         if (!settingsCache.enabled) return;
         const imgs = document.querySelectorAll('img');
         const candidates = [];
+        const minW = Math.max(16, settingsCache.minWidth || 0);
+        const minH = Math.max(16, settingsCache.minHeight || 0);
         imgs.forEach(img => {
           const url = getCandidateImgUrl(img);
           const w = img.naturalWidth || img.width;
           const h = img.naturalHeight || img.height;
-          if (url && w >= 32 && h >= 32) candidates.push({ url, el: img });
+          if (!url || w < minW || h < minH) return;
+          if (settingsCache.mode === 'large' && w < 800 && h < 600) return;
+          candidates.push({ url, el: img });
         });
         const current = await getSelection();
         const processed = await processUrls(candidates);
-        await setSelection([...current, ...processed]);
+        await setSelection(Array.from(new Set([...current, ...processed])));
         syncHighlights();
         break;
+      }
       case 'clearSelection':
         if (!settingsCache.enabled) return;
         await setSelection([]);
@@ -681,7 +926,8 @@
     const stored = await api.storage.local.get([
       ENABLED_KEY, LOW_PERF_KEY, PREVIEW_KEY, OVERLAY_KEY, MAX_SELECT_KEY, THEME_KEY, MODE_KEY,
       SHORTCUTS_ENABLED_KEY, SHORTCUTS_DATA_KEY,
-      CONVERTER_ENABLED_KEY, CONVERTER_TOOLBAR_KEY, CONVERTER_FORMAT_KEY, CONVERTER_QUALITY_KEY, CONVERTER_AUTO_DOWNLOAD_KEY
+      CONVERTER_ENABLED_KEY, CONVERTER_TOOLBAR_KEY, CONVERTER_FORMAT_KEY, CONVERTER_QUALITY_KEY, CONVERTER_AUTO_DOWNLOAD_KEY,
+      MIN_WIDTH_KEY, MIN_HEIGHT_KEY
     ]);
     settingsCache = {
       enabled: !!stored[ENABLED_KEY],
@@ -697,7 +943,9 @@
       converterToolbarVisible: !!stored[CONVERTER_TOOLBAR_KEY],
       converterFormat: stored[CONVERTER_FORMAT_KEY] || 'jpeg',
       converterQuality: stored[CONVERTER_QUALITY_KEY] || 90,
-      converterAutoDownload: stored[CONVERTER_AUTO_DOWNLOAD_KEY] !== false
+      converterAutoDownload: stored[CONVERTER_AUTO_DOWNLOAD_KEY] !== false,
+      minWidth: Number(stored[MIN_WIDTH_KEY]) || 0,
+      minHeight: Number(stored[MIN_HEIGHT_KEY]) || 0
     };
     if (settingsCache.enabled) { ensureToolbar(); syncHighlights(); updateModeListeners(); }
     if (settingsCache.converterEnabled && settingsCache.converterToolbarVisible) { ensureConverterToolbar(); }
@@ -714,6 +962,8 @@
     if (changes[CONVERTER_ENABLED_KEY]) { settingsCache.converterEnabled = !!changes[CONVERTER_ENABLED_KEY].newValue; }
     if (changes[CONVERTER_TOOLBAR_KEY]) { settingsCache.converterToolbarVisible = !!changes[CONVERTER_TOOLBAR_KEY].newValue; }
     if (changes[CONVERTER_FORMAT_KEY]) { settingsCache.converterFormat = changes[CONVERTER_FORMAT_KEY].newValue || 'jpeg'; }
+    if (changes[MIN_WIDTH_KEY]) { settingsCache.minWidth = Number(changes[MIN_WIDTH_KEY].newValue) || 0; }
+    if (changes[MIN_HEIGHT_KEY]) { settingsCache.minHeight = Number(changes[MIN_HEIGHT_KEY].newValue) || 0; }
     if (changes[CONVERTER_QUALITY_KEY]) { settingsCache.converterQuality = changes[CONVERTER_QUALITY_KEY].newValue || 90; }
     if (changes[CONVERTER_AUTO_DOWNLOAD_KEY]) { settingsCache.converterAutoDownload = changes[CONVERTER_AUTO_DOWNLOAD_KEY].newValue !== false; }
     if (changes[THEME_KEY]) {
