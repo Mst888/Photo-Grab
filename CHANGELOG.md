@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.8.4] - 2026-03-18
+
+### ✨ Yeni Özellikler
+
+**📏 Minimum Boyut Filtresi (Min Size Filter)**
+- Ana ekranda Min Width / Min Height (px) giriş alanları
+- Belirlenen boyutun altındaki görseller tıklama ile seçilemiyor
+- `Select All` da min boyut filtresine uyuyor
+- Ayarlar storage'a kaydedilir; içerik scripti anında güncellenir (`IBD_UPDATE_MIN_SIZE`)
+
+**🖱️ Sağ Tık → Görsel İndir (Context Menu)**
+- Herhangi bir görsele sağ tıklayınca "Download this image (Photo-Grab)" menüsü
+- Görseli seçime ekler ve tek seferlik indirme başlatır
+- Content script yoksa doğrudan `downloads` API ile fallback
+- `manifest.json`'a `contextMenus` yetkisi eklendi
+
+**🔁 Duplicate Dedüplikasyonu (Dedup)**
+- İndirme sırasında aynı URL'den gelen kopyalar otomatik filtrelenir
+- Popup'ta "Skip duplicate images" toggle ile açılıp kapatılabilir (varsayılan: açık)
+- `ibd_dedup_v1` storage key ile saklanır
+
+**📊 İndirme Progress Bar**
+- Download butonu altında gerçek zamanlı ilerleme çubuğu
+- `X / N` sayacı ve yüzde göstergesi
+- İndirme tamamlanınca 100%'e ulaşır, ardından otomatik gizlenir
+- Hata durumunda bar gizlenir, status mesajı gösterilir
+
+### 📦 Yeni Storage Key'leri
+- `ibd_minWidth_v1` — Minimum genişlik filtresi (px)
+- `ibd_minHeight_v1` — Minimum yükseklik filtresi (px)
+- `ibd_dedup_v1` — Duplicate URL filtresi (bool)
+
+---
+
 ## [1.8.3] - 2026-03-05
 
 ### ✨ Yeni Özellikler

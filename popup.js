@@ -42,6 +42,9 @@
   const LANGUAGE_KEY = 'ibd_language_v1';
   const HISTORY_KEY = 'ibd_downloadHistory_v1';
   const COLLECTIONS_KEY = 'ibd_collections_v1';
+  const MIN_WIDTH_KEY = 'ibd_minWidth_v1';
+  const MIN_HEIGHT_KEY = 'ibd_minHeight_v1';
+  const DEDUP_KEY = 'ibd_dedup_v1';
 
   const DEFAULT_SHORTCUTS = {
     toggleSelection: { key: 'e', alt: true, ctrl: false, shift: false },
@@ -106,6 +109,13 @@
     recorderActionName: document.getElementById('recorderActionName'),
     recorderKeys: document.getElementById('recorderKeys'),
     editShortcutBtns: document.querySelectorAll('.ibd-edit-shortcut'),
+    minWidth: document.getElementById('minWidth'),
+    minHeight: document.getElementById('minHeight'),
+    dedupToggle: document.getElementById('dedupToggle'),
+    downloadProgress: document.getElementById('downloadProgress'),
+    downloadProgressBar: document.getElementById('downloadProgressBar'),
+    downloadProgressText: document.getElementById('downloadProgressText'),
+    downloadProgressPct: document.getElementById('downloadProgressPct'),
     converterEnabledToggle: document.getElementById('converterEnabledToggle'),
     converterToolbarToggle: document.getElementById('converterToolbarToggle'),
     converterToolbarToggleSettings: document.getElementById('converterToolbarToggleSettings'),
@@ -115,7 +125,14 @@
     converterAutoDownloadToggle: document.getElementById('converterAutoDownloadToggle'),
     githubBtn: document.getElementById('githubBtn'),
     clearOnDisableToggle: document.getElementById('clearOnDisableToggle'),
-    languageSelect: document.getElementById('languageSelect')
+    languageSelect: document.getElementById('languageSelect'),
+    exportWordBtn: document.getElementById('exportWordBtn'),
+    exportPptBtn: document.getElementById('exportPptBtn'),
+    filterBtns: document.querySelectorAll('.ibd-filter-btn'),
+    fileUpload: document.getElementById('fileUpload'),
+    uploadFormat: document.getElementById('uploadFormat'),
+    convertBtn: document.getElementById('convertBtn'),
+    selectAllBtn: document.getElementById('selectAllBtn')
   };
 
   let recordingAction = null;
@@ -225,7 +242,7 @@
       STAY_OPEN_KEY, POPUP_SIZE_PRESET_KEY, POPUP_WIDTH_KEY, POPUP_HEIGHT_KEY,
       CLEAR_ON_DISABLE_KEY, SHORTCUTS_ENABLED_KEY, SHORTCUTS_DATA_KEY,
       CONVERTER_ENABLED_KEY, CONVERTER_TOOLBAR_KEY, CONVERTER_FORMAT_KEY, CONVERTER_QUALITY_KEY, CONVERTER_AUTO_DOWNLOAD_KEY,
-      LANGUAGE_KEY
+      LANGUAGE_KEY, MIN_WIDTH_KEY, MIN_HEIGHT_KEY, DEDUP_KEY
     ]);
 
     els.enabledToggle.checked = !!stored[ENABLED_KEY];
@@ -280,6 +297,10 @@
       if (els.converterQualityValue) els.converterQualityValue.textContent = els.converterQuality.value;
     }
     if (els.converterAutoDownloadToggle) els.converterAutoDownloadToggle.checked = stored[CONVERTER_AUTO_DOWNLOAD_KEY] !== false;
+
+    if (els.minWidth) els.minWidth.value = stored[MIN_WIDTH_KEY] ?? 0;
+    if (els.minHeight) els.minHeight.value = stored[MIN_HEIGHT_KEY] ?? 0;
+    if (els.dedupToggle) els.dedupToggle.checked = stored[DEDUP_KEY] !== false;
 
     const lang = stored[LANGUAGE_KEY] || 'en';
     if (els.languageSelect) els.languageSelect.value = lang;
@@ -463,6 +484,19 @@
     }
   }
 
+  function showProgress(current, total) {
+    if (!els.downloadProgress) return;
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+    els.downloadProgress.style.display = '';
+    els.downloadProgressBar.style.width = pct + '%';
+    els.downloadProgressText.textContent = `${current} / ${total}`;
+    els.downloadProgressPct.textContent = pct + '%';
+  }
+
+  function hideProgress() {
+    if (els.downloadProgress) els.downloadProgress.style.display = 'none';
+  }
+
   async function requestDownload() {
     const stored = await api.storage.local.get(STORAGE_KEY);
     const selection = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
@@ -471,7 +505,8 @@
     const settings = await api.storage.local.get([
       QUALITY_KEY, FORMAT_KEY, FOLDER_KEY, USE_SUBFOLDER_KEY, ASK_LOCATION_KEY,
       BATCH_SIZE_KEY, DELAY_KEY, LAZY_KEY, LOW_PERF_KEY, NAMING_KEY, TEMPLATE_KEY, ZIP_KEY,
-      ASPECT_RATIO_KEY, CUSTOM_RATIO_W_KEY, CUSTOM_RATIO_H_KEY, CROP_MODE_KEY
+      ASPECT_RATIO_KEY, CUSTOM_RATIO_W_KEY, CUSTOM_RATIO_H_KEY, CROP_MODE_KEY,
+      DEDUP_KEY
     ]);
 
     console.log('IBD DEBUG: requestDownload settings:', settings);
@@ -480,9 +515,15 @@
     const pageTitle = (tab && tab.title) ? tab.title.substring(0, 50).replace(/[\\/:*?"<>|]/g, '_') : 'Images';
     const site = (tab && tab.url) ? new URL(tab.url).hostname : 'any';
 
+    // Dedup: filter out duplicate URLs if setting enabled (default on)
+    const dedupEnabled = settings[DEDUP_KEY] !== false;
+    const dedupedSelection = dedupEnabled ? Array.from(new Set(selection)) : selection;
+
     setStatus('Preparing downloads...');
+    showProgress(0, dedupedSelection.length);
+
     const payload = {
-      urls: selection,
+      urls: dedupedSelection,
       quality: clampQuality(settings[QUALITY_KEY] ?? 90),
       downloadLocation: settings[ASK_LOCATION_KEY] ? 'ask' : 'default',
       format: settings[FORMAT_KEY] || 'original',
@@ -504,35 +545,54 @@
 
     console.log('IBD DEBUG: Sending payload to background:', payload);
 
+    // Simulate incremental progress via polling storage
+    const total = dedupedSelection.length;
+    let progressInterval = null;
+    if (total > 1) {
+      let simulated = 0;
+      progressInterval = setInterval(() => {
+        simulated = Math.min(simulated + 1, total - 1);
+        showProgress(simulated, total);
+      }, Math.max(300, Number(settings[DELAY_KEY] || 100) + 200));
+    }
+
     try {
       const res = await api.runtime.sendMessage({ type: 'IBD_DOWNLOAD_SELECTED', payload });
+      clearInterval(progressInterval);
       console.log('IBD DEBUG: Response from background:', res);
       if (res && res.ok) {
-        setStatus('Downloads started!');
+        showProgress(total, total);
+        setStatus(`Downloaded ${total} image${total !== 1 ? 's' : ''}!`);
         // Record history
         try {
-          const pageHostname = site;
-          for (const url of selection) {
+          for (const url of dedupedSelection) {
             await addHistoryEntry({
               url: url,
               thumb: url,
               filename: url.split('/').pop().split('?')[0] || 'image',
-              page: pageHostname,
+              page: site,
               ts: Date.now()
             });
           }
         } catch (_) {}
         setTimeout(() => {
+          hideProgress();
           setStatus('');
           if (!els.stayOpenToggle?.checked) window.close();
-        }, 1500);
+        }, 1800);
       } else if (res && res.failures) {
+        clearInterval(progressInterval);
+        hideProgress();
         const firstErr = res.failures[0]?.error || 'Unknown error';
         setStatus(`Failed to download ${res.failures.length} images. (Error: ${firstErr})`, true);
       } else {
+        clearInterval(progressInterval);
+        hideProgress();
         setStatus('Error: ' + (res?.error || 'Unknown error'), true);
       }
     } catch (e) {
+      clearInterval(progressInterval);
+      hideProgress();
       setStatus('Sync error: ' + e.message, true);
     }
   }
@@ -592,6 +652,26 @@
   if (els.maxSelection) els.maxSelection.onchange = () => saveSetting(MAX_SELECT_KEY, Number(els.maxSelection.value));
   if (els.lazyProcessToggle) els.lazyProcessToggle.onchange = () => saveSetting(LAZY_KEY, els.lazyProcessToggle.checked);
 
+  if (els.minWidth) els.minWidth.onchange = () => {
+    saveSetting(MIN_WIDTH_KEY, Number(els.minWidth.value));
+    notifyMinSizeChange();
+  };
+  if (els.minHeight) els.minHeight.onchange = () => {
+    saveSetting(MIN_HEIGHT_KEY, Number(els.minHeight.value));
+    notifyMinSizeChange();
+  };
+  if (els.dedupToggle) els.dedupToggle.onchange = () => saveSetting(DEDUP_KEY, els.dedupToggle.checked);
+
+  async function notifyMinSizeChange() {
+    const tabId = await getActiveTabId();
+    if (tabId) try {
+      await api.tabs.sendMessage(tabId, {
+        type: 'IBD_UPDATE_MIN_SIZE',
+        payload: { minWidth: Number(els.minWidth.value), minHeight: Number(els.minHeight.value) }
+      });
+    } catch (_) {}
+  }
+
   if (els.selectionMode) els.selectionMode.onchange = () => saveSetting(MODE_KEY, els.selectionMode.value);
   if (els.namingMode) {
     els.namingMode.onchange = () => {
@@ -642,6 +722,36 @@
   }
 
   if (els.downloadBtn) els.downloadBtn.onclick = requestDownload;
+
+  if (els.selectAllBtn) {
+    els.selectAllBtn.onclick = async () => {
+      // Ensure selection mode is enabled — IBD_SELECT_ALL is a no-op on the
+      // content side when not enabled.
+      const s = await api.storage.local.get(ENABLED_KEY);
+      if (!s[ENABLED_KEY]) {
+        await api.storage.local.set({ [ENABLED_KEY]: true });
+        if (els.enabledToggle) els.enabledToggle.checked = true;
+      }
+      const tabId = await getActiveTabId();
+      if (!tabId) { setStatus('No active tab.', true); return; }
+      setStatus('Selecting all images…');
+      els.selectAllBtn.disabled = true;
+      try {
+        await api.tabs.sendMessage(tabId, { type: 'IBD_SELECT_ALL' });
+        // Give content script a tick to update storage, then refresh UI
+        setTimeout(async () => {
+          await updateSelectedCount();
+          const stored = await api.storage.local.get(STORAGE_KEY);
+          const n = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY].length : 0;
+          setStatus(n ? `Selected ${n} image${n !== 1 ? 's' : ''}.` : 'No images matched the filter.');
+          els.selectAllBtn.disabled = false;
+        }, 300);
+      } catch (err) {
+        els.selectAllBtn.disabled = false;
+        setStatus('Select All failed: open the page first, then try again.', true);
+      }
+    };
+  }
 
   if (els.settingsBtn) els.settingsBtn.onclick = () => showView('settings');
   if (els.backBtn) els.backBtn.onclick = () => showView('home');
@@ -1013,69 +1123,181 @@
   }
 
   // ===== CLOUD UPLOAD =====
-  // Each user authenticates with their OWN account via OAuth.
-  // You must register your own app on each provider's developer console
-  // and replace the placeholder CLIENT_IDs below.
+  // Each user authenticates with their OWN OAuth client. Keys are stored
+  // locally in browser.storage.local — never sent anywhere except the
+  // provider during the OAuth flow.
   //
-  // Google Drive : console.cloud.google.com  → OAuth 2.0 Client ID (Web/Extension)
-  // Dropbox      : dropbox.com/developers/apps → App key
-  // OneDrive     : portal.azure.com → App registrations → Application (client) ID
+  // Provider consoles:
+  //   Google Drive : console.cloud.google.com  → OAuth 2.0 Client ID (Web)
+  //   Dropbox      : dropbox.com/developers/apps → App key
+  //   OneDrive     : portal.azure.com → App registrations → Application (client) ID
   //
-  // The redirect URI for Firefox extensions must be:
-  //   https://<extension-id>.extensions.allizom.org/
-  // Use browser.identity.getRedirectURL() to get it at runtime.
+  // Redirect URI is shown in the Cloud settings panel.
 
-  const CLOUD_CLIENT_IDS = {
-    gdrive:   'YOUR_GOOGLE_CLIENT_ID',
-    dropbox:  'YOUR_DROPBOX_APP_KEY',
-    onedrive: 'YOUR_MICROSOFT_CLIENT_ID'
-  };
+  const CLOUD_API_KEYS_STORAGE = 'ibd_cloud_api_keys_v1';
+  const PROVIDER_LABELS = { gdrive: 'Google Drive', dropbox: 'Dropbox', onedrive: 'OneDrive' };
+
+  let cloudApiKeys = { gdrive: '', dropbox: '', onedrive: '' };
+
+  async function loadCloudApiKeys() {
+    const s = await api.storage.local.get(CLOUD_API_KEYS_STORAGE);
+    cloudApiKeys = { gdrive: '', dropbox: '', onedrive: '', ...(s[CLOUD_API_KEYS_STORAGE] || {}) };
+    const gd = document.getElementById('apiKeyGdrive');
+    const db = document.getElementById('apiKeyDropbox');
+    const od = document.getElementById('apiKeyOnedrive');
+    if (gd) gd.value = cloudApiKeys.gdrive || '';
+    if (db) db.value = cloudApiKeys.dropbox || '';
+    if (od) od.value = cloudApiKeys.onedrive || '';
+    refreshConnectedButtons();
+  }
+
+  async function refreshConnectedButtons() {
+    const tokens = await api.storage.local.get([
+      'ibd_cloud_token_gdrive', 'ibd_cloud_token_dropbox', 'ibd_cloud_token_onedrive'
+    ]);
+    const map = { gdrive: 'cloud_token_gdrive', dropbox: 'cloud_token_dropbox', onedrive: 'cloud_token_onedrive' };
+    let anyConnected = false;
+    Object.keys(map).forEach(p => {
+      const btn = document.querySelector(`.ibd-cloud-btn[data-provider="${p}"]`);
+      if (!btn) return;
+      const has = !!tokens['ibd_' + map[p]];
+      btn.classList.toggle('ibd-cloud-connected', has);
+      if (has) anyConnected = true;
+    });
+    const upBtn = document.getElementById('cloudUploadBtn');
+    if (upBtn) upBtn.disabled = !anyConnected;
+  }
 
   function buildAuthUrl(provider, redirectUri) {
     const enc = encodeURIComponent;
+    const id = cloudApiKeys[provider];
+    if (!id) return null;
     if (provider === 'gdrive') {
-      return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${enc(CLOUD_CLIENT_IDS.gdrive)}&redirect_uri=${enc(redirectUri)}&response_type=token&scope=${enc('https://www.googleapis.com/auth/drive.file')}`;
+      return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${enc(id)}&redirect_uri=${enc(redirectUri)}&response_type=token&scope=${enc('https://www.googleapis.com/auth/drive.file')}&include_granted_scopes=true`;
     }
     if (provider === 'dropbox') {
-      return `https://www.dropbox.com/oauth2/authorize?client_id=${enc(CLOUD_CLIENT_IDS.dropbox)}&redirect_uri=${enc(redirectUri)}&response_type=token`;
+      return `https://www.dropbox.com/oauth2/authorize?client_id=${enc(id)}&redirect_uri=${enc(redirectUri)}&response_type=token`;
     }
     if (provider === 'onedrive') {
-      return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${enc(CLOUD_CLIENT_IDS.onedrive)}&redirect_uri=${enc(redirectUri)}&response_type=token&scope=${enc('files.readwrite offline_access')}`;
+      return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${enc(id)}&redirect_uri=${enc(redirectUri)}&response_type=token&scope=${enc('files.readwrite offline_access')}`;
     }
     return null;
+  }
+
+  function setCloudStatus(text, isError) {
+    const el = document.getElementById('cloudStatus');
+    if (!el) return;
+    el.textContent = text || '';
+    el.style.color = isError ? '#e25b5b' : '';
   }
 
   document.querySelectorAll('.ibd-cloud-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const provider = btn.dataset.provider;
-      const statusEl = document.getElementById('cloudStatus');
-
-      if (CLOUD_CLIENT_IDS[provider].startsWith('YOUR_')) {
-        if (statusEl) statusEl.textContent = '⚠ Set up your ' + btn.querySelector('svg + *')?.textContent?.trim() + ' API key first.';
+      if (!cloudApiKeys[provider]) {
+        setCloudStatus(`⚠ Enter your ${PROVIDER_LABELS[provider]} API key first (see fields below), then click Save API Keys.`, true);
         return;
       }
-
       try {
-        const redirectUri = browser.identity.getRedirectURL();
+        const redirectUri = api.identity.getRedirectURL();
         const authUrl = buildAuthUrl(provider, redirectUri);
-        if (statusEl) statusEl.textContent = 'Waiting for authorization...';
+        if (!authUrl) { setCloudStatus('Could not build auth URL.', true); return; }
+        setCloudStatus(`Waiting for ${PROVIDER_LABELS[provider]} authorization...`);
 
-        const responseUrl = await browser.identity.launchWebAuthFlow({ url: authUrl, interactive: true });
-        const hashParams = new URLSearchParams(new URL(responseUrl).hash.slice(1));
-        const token = hashParams.get('access_token');
+        const responseUrl = await api.identity.launchWebAuthFlow({ url: authUrl, interactive: true });
+        const hash = new URL(responseUrl).hash.slice(1);
+        const params = new URLSearchParams(hash);
+        const token = params.get('access_token');
 
         if (token) {
           btn.classList.add('ibd-cloud-connected');
-          if (statusEl) statusEl.textContent = '✓ Connected! Token ready for upload.';
+          setCloudStatus(`✓ ${PROVIDER_LABELS[provider]} connected! Use Upload to send selection.`);
           await api.storage.local.set({ ['ibd_cloud_token_' + provider]: token });
+          refreshConnectedButtons();
         } else {
-          if (statusEl) statusEl.textContent = 'Auth failed — no token received.';
+          setCloudStatus('Auth failed — no token received.', true);
         }
       } catch (err) {
-        if (statusEl) statusEl.textContent = 'Auth cancelled or failed.';
+        setCloudStatus('Auth cancelled or failed: ' + (err && err.message || err), true);
       }
     });
   });
+
+  // Save / clear API keys
+  (function initCloudKeyControls() {
+    const saveBtn = document.getElementById('saveApiKeysBtn');
+    const clearBtn = document.getElementById('clearCloudTokensBtn');
+    const redirectInput = document.getElementById('cloudRedirectUri');
+    const copyBtn = document.getElementById('copyRedirectBtn');
+    const uploadBtn = document.getElementById('cloudUploadBtn');
+
+    if (redirectInput && api.identity && api.identity.getRedirectURL) {
+      try { redirectInput.value = api.identity.getRedirectURL(); } catch (_) {}
+    }
+    if (copyBtn && redirectInput) {
+      copyBtn.onclick = async () => {
+        try { await navigator.clipboard.writeText(redirectInput.value); copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = 'Copy', 1200); } catch (_) {}
+      };
+    }
+    if (saveBtn) {
+      saveBtn.onclick = async () => {
+        const gd = document.getElementById('apiKeyGdrive');
+        const db = document.getElementById('apiKeyDropbox');
+        const od = document.getElementById('apiKeyOnedrive');
+        cloudApiKeys = {
+          gdrive:   (gd && gd.value || '').trim(),
+          dropbox:  (db && db.value || '').trim(),
+          onedrive: (od && od.value || '').trim()
+        };
+        await api.storage.local.set({ [CLOUD_API_KEYS_STORAGE]: cloudApiKeys });
+        setCloudStatus('✓ API keys saved locally. Click a provider above to connect.');
+      };
+    }
+    if (clearBtn) {
+      clearBtn.onclick = async () => {
+        await api.storage.local.remove([
+          'ibd_cloud_token_gdrive', 'ibd_cloud_token_dropbox', 'ibd_cloud_token_onedrive'
+        ]);
+        document.querySelectorAll('.ibd-cloud-btn').forEach(b => b.classList.remove('ibd-cloud-connected'));
+        if (uploadBtn) uploadBtn.disabled = true;
+        setCloudStatus('All cloud accounts disconnected.');
+      };
+    }
+    if (uploadBtn) {
+      uploadBtn.onclick = async () => {
+        const provSel = document.getElementById('cloudUploadProvider');
+        const provider = provSel ? provSel.value : 'gdrive';
+        const tokenKey = 'ibd_cloud_token_' + provider;
+        const tokens = await api.storage.local.get(tokenKey);
+        const token = tokens[tokenKey];
+        if (!token) { setCloudStatus(`Connect to ${PROVIDER_LABELS[provider]} first.`, true); return; }
+
+        const stored = await api.storage.local.get(STORAGE_KEY);
+        const selection = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
+        if (!selection.length) { setCloudStatus('No images selected to upload.', true); return; }
+
+        uploadBtn.disabled = true;
+        setCloudStatus(`Uploading ${selection.length} image(s) to ${PROVIDER_LABELS[provider]}...`);
+        try {
+          const res = await api.runtime.sendMessage({
+            type: 'IBD_CLOUD_UPLOAD',
+            payload: { provider, token, urls: selection, folder: 'Photo-Grab' }
+          });
+          if (res && res.ok) {
+            setCloudStatus(`✓ Uploaded ${res.uploaded}/${selection.length} to ${PROVIDER_LABELS[provider]}.`);
+          } else {
+            setCloudStatus('Upload failed: ' + (res && res.error || 'unknown error'), true);
+          }
+        } catch (e) {
+          setCloudStatus('Upload error: ' + e.message, true);
+        } finally {
+          uploadBtn.disabled = false;
+        }
+      };
+    }
+
+    loadCloudApiKeys();
+  })();
 
   // ===== CUSTOM PRIMARY COLOR =====
   const CUSTOM_COLOR_KEY = 'ibd_customPrimaryColor_v1';
@@ -1328,6 +1550,128 @@
   api.storage.local.get(CUSTOM_COLOR_KEY).then(s => {
     if (s[CUSTOM_COLOR_KEY]) applyCustomPrimaryColor(s[CUSTOM_COLOR_KEY]);
   });
+
+  // ===== WORD EXPORT =====
+  if (els.exportWordBtn) {
+    els.exportWordBtn.onclick = async () => {
+      const stored = await api.storage.local.get(STORAGE_KEY);
+      const urls = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
+      if (!urls.length) return setStatus('No images selected.', true);
+      setStatus('Generating Word document...');
+      try {
+        const tab = (await api.tabs.query({ active: true, currentWindow: true }))[0];
+        const pageTitle = (tab && tab.title) ? tab.title.substring(0, 50).replace(/[\\/:*?"<>|]/g, '_') : 'Images';
+        const res = await api.runtime.sendMessage({ type: 'IBD_EXPORT_WORD', payload: { urls, pageTitle } });
+        if (res && res.ok) setStatus('Word document downloaded.');
+        else setStatus('Word export failed: ' + (res && res.error ? res.error : 'Unknown error'), true);
+      } catch (e) {
+        setStatus('Word export error: ' + e.message, true);
+      }
+    };
+  }
+
+  // ===== POWERPOINT EXPORT =====
+  if (els.exportPptBtn) {
+    els.exportPptBtn.onclick = async () => {
+      const stored = await api.storage.local.get(STORAGE_KEY);
+      const urls = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
+      if (!urls.length) return setStatus('No images selected.', true);
+      setStatus('Generating PowerPoint...');
+      try {
+        const tab = (await api.tabs.query({ active: true, currentWindow: true }))[0];
+        const pageTitle = (tab && tab.title) ? tab.title.substring(0, 50).replace(/[\\/:*?"<>|]/g, '_') : 'Images';
+        const res = await api.runtime.sendMessage({ type: 'IBD_EXPORT_PPT', payload: { urls, pageTitle } });
+        if (res && res.ok) setStatus('PowerPoint downloaded.');
+        else setStatus('PPT export failed: ' + (res && res.error ? res.error : 'Unknown error'), true);
+      } catch (e) {
+        setStatus('PPT export error: ' + e.message, true);
+      }
+    };
+  }
+
+  // ===== IMAGE FILTERS =====
+  if (els.filterBtns) {
+    els.filterBtns.forEach(btn => {
+      btn.onclick = async () => {
+        const filter = btn.dataset.filter;
+        const stored = await api.storage.local.get(STORAGE_KEY);
+        const urls = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
+        if (!urls.length) return setStatus('No images selected.', true);
+        setStatus(`Applying ${filter} filter...`);
+        try {
+          const res = await api.runtime.sendMessage({ type: 'IBD_APPLY_FILTER', payload: { urls, filter } });
+          if (res && res.ok) {
+            await api.storage.local.set({ [STORAGE_KEY]: res.filteredUrls });
+            await renderPreviewGallery();
+            setStatus(`${filter} filter applied.`);
+          } else {
+            setStatus('Filter failed: ' + (res && res.error ? res.error : 'Unknown'), true);
+          }
+        } catch (e) {
+          setStatus('Filter error: ' + e.message, true);
+        }
+      };
+    });
+  }
+
+  // ===== FILE CONVERT =====
+  if (els.convertBtn) {
+    els.convertBtn.onclick = async () => {
+      const files = els.fileUpload && els.fileUpload.files;
+      if (!files || files.length === 0) return setStatus('No files selected.', true);
+      const format = els.uploadFormat ? els.uploadFormat.value : 'jpeg';
+      const ext = format === 'jpeg' ? 'jpg' : format;
+      const mimeType = format === 'jpeg' ? 'image/jpeg' : (format === 'png' ? 'image/png' : 'image/webp');
+      const quality = format === 'png' ? 1 : 0.9;
+      setStatus(`Converting ${files.length} file(s)...`);
+
+      let done = 0;
+      for (const file of files) {
+        try {
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          const converted = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth;
+              canvas.height = img.naturalHeight;
+              const ctx = canvas.getContext('2d');
+              if (format !== 'png') {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+              }
+              ctx.drawImage(img, 0, 0);
+              canvas.toBlob(blob => {
+                if (blob) resolve(blob);
+                else reject(new Error('Canvas toBlob failed'));
+              }, mimeType, quality);
+            };
+            img.onerror = reject;
+            img.src = dataUrl;
+          });
+
+          const baseName = file.name.replace(/\.[^/.]+$/, '');
+          const filename = `${baseName}_converted.${ext}`;
+          const blobUrl = URL.createObjectURL(converted);
+          await api.downloads.download({ url: blobUrl, filename, saveAs: false, conflictAction: 'uniquify' });
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+          done++;
+        } catch (e) {
+          console.error('[Photo-Grab] Convert error for', file.name, e);
+        }
+      }
+
+      if (done === files.length) setStatus(`${done} file(s) converted and downloaded.`);
+      else setStatus(`${done}/${files.length} converted. Some files failed.`, done < files.length);
+      els.fileUpload.value = '';
+    };
+  }
 
   init();
 })();

@@ -95,6 +95,8 @@
             <option value="area">Area Selection</option>
             <option value="sameSize">Same Size</option>
             <option value="large">Large Images</option>
+            <option value="pinterest">Pinterest (Photo + Video)</option>
+            <option value="youtube">YouTube (Video Cover)</option>
           </select>
         </div>
 
@@ -128,6 +130,27 @@
           </select>
         </div>
 
+        <!-- Min Size Filter -->
+        <div class="ibd-field">
+          <label class="ibd-label">Min Image Size</label>
+          <div class="ibd-field-row" style="margin-top:0;">
+            <div class="ibd-field-half">
+              <label class="ibd-label-mini">Min Width (px)</label>
+              <input type="number" id="minWidth" class="ibd-input-mini" value="0" min="0" max="9999" placeholder="0" />
+            </div>
+            <div class="ibd-field-half">
+              <label class="ibd-label-mini">Min Height (px)</label>
+              <input type="number" id="minHeight" class="ibd-input-mini" value="0" min="0" max="9999" placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Dedup Toggle -->
+        <div class="ibd-toggle-mini">
+          <label class="ibd-label-mini">Skip duplicate images</label>
+          <label class="ibd-switch-mini"><input id="dedupToggle" type="checkbox" checked /><span class="ibd-slider-mini"></span></label>
+        </div>
+
         <div id="previewGallerySection" class="ibd-field">
           <label class="ibd-label">Selection Preview</label>
           <div id="previewGallery" class="ibd-preview-gallery"></div>
@@ -150,7 +173,50 @@
 
         <div class="ibd-actions">
           <button id="downloadBtn" class="ibd-btn ibd-btn-primary" type="button">↓ Download</button>
+          <button id="selectAllBtn" class="ibd-btn ibd-btn-ghost" type="button" title="Select all visible images on the page (Alt+A)">☑ Select All</button>
           <button id="clearBtn" class="ibd-btn ibd-btn-ghost" type="button">✕ Clear</button>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="ibd-actions" style="margin-top:6px;">
+          <button id="exportWordBtn" class="ibd-btn ibd-btn-ghost" type="button" style="flex:1;font-size:11px;">📄 Word</button>
+          <button id="exportPptBtn" class="ibd-btn ibd-btn-ghost" type="button" style="flex:1;font-size:11px;">📊 PPT</button>
+        </div>
+
+        <!-- Image Filters -->
+        <div class="ibd-field" style="margin-top:8px;">
+          <label class="ibd-label">Apply Filter to Selected</label>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">
+            <button class="ibd-btn ibd-btn-ghost ibd-filter-btn" data-filter="grayscale" style="font-size:10px;padding:3px 7px;">Grayscale</button>
+            <button class="ibd-btn ibd-btn-ghost ibd-filter-btn" data-filter="sepia" style="font-size:10px;padding:3px 7px;">Sepia</button>
+            <button class="ibd-btn ibd-btn-ghost ibd-filter-btn" data-filter="invert" style="font-size:10px;padding:3px 7px;">Invert</button>
+            <button class="ibd-btn ibd-btn-ghost ibd-filter-btn" data-filter="warm" style="font-size:10px;padding:3px 7px;">Warm</button>
+            <button class="ibd-btn ibd-btn-ghost ibd-filter-btn" data-filter="cool" style="font-size:10px;padding:3px 7px;">Cool</button>
+          </div>
+        </div>
+
+        <!-- File Upload & Convert -->
+        <div class="ibd-field" style="margin-top:8px;">
+          <label class="ibd-label">Convert Local Files</label>
+          <input type="file" id="fileUpload" multiple accept="image/*" style="font-size:11px;margin-top:4px;width:100%;" />
+          <div style="display:flex;gap:6px;margin-top:6px;align-items:center;">
+            <select id="uploadFormat" class="ibd-select" style="flex:1;font-size:11px;">
+              <option value="jpeg">→ JPEG</option>
+              <option value="png">→ PNG</option>
+              <option value="webp">→ WebP</option>
+            </select>
+            <button id="convertBtn" class="ibd-btn ibd-btn-primary" type="button" style="font-size:11px;padding:5px 10px;">Convert</button>
+          </div>
+        </div>
+        <!-- Download Progress Bar -->
+        <div id="downloadProgress" class="ibd-progress-wrap" style="display:none;">
+          <div class="ibd-progress-bar-bg">
+            <div id="downloadProgressBar" class="ibd-progress-bar-fill" style="width:0%"></div>
+          </div>
+          <div class="ibd-progress-label">
+            <span id="downloadProgressText">0 / 0</span>
+            <span id="downloadProgressPct">0%</span>
+          </div>
         </div>
         <div class="ibd-status" id="status" aria-live="polite"></div>
       </div>
@@ -425,7 +491,77 @@
             </button>
           </div>
           <div id="cloudStatus" class="ibd-cloud-status"></div>
-          <p class="ibd-cloud-note">Cloud upload opens the provider's OAuth page in a new tab. Images are sent after authentication.</p>
+          <p class="ibd-cloud-note">Cloud upload opens the provider's OAuth page in a new tab. After connecting, use the Upload button below to send your current selection.</p>
+
+          <button id="cloudUploadBtn" class="ibd-btn ibd-btn-primary" type="button" style="width:100%;margin-top:8px;" disabled>☁ Upload Selected to Cloud</button>
+          <div class="ibd-field" style="margin-top:8px;">
+            <label class="ibd-label-mini" for="cloudUploadProvider">Upload target</label>
+            <select id="cloudUploadProvider" class="ibd-select">
+              <option value="gdrive">Google Drive</option>
+              <option value="dropbox">Dropbox</option>
+              <option value="onedrive">OneDrive</option>
+            </select>
+          </div>
+
+          <div class="ibd-settings-section-title" style="margin-top:14px;">API Keys (your own)</div>
+          <p class="ibd-cloud-desc" style="margin-top:0;">Each provider requires its own free OAuth Client ID. Create your own (free, takes ~3 min) and paste it below — keys stay only on your device.</p>
+
+          <div class="ibd-field" style="margin-top:6px;">
+            <label class="ibd-label-mini" for="apiKeyGdrive">Google Drive — OAuth Client ID</label>
+            <input id="apiKeyGdrive" type="text" class="ibd-input-mini" style="width:100%;" placeholder="123456789-abc...apps.googleusercontent.com" />
+            <details class="ibd-cloud-help" style="margin-top:4px;">
+              <summary style="cursor:pointer;font-size:11px;opacity:.85;">How to obtain →</summary>
+              <ol style="font-size:11px;line-height:1.5;margin:6px 0 0 16px;padding:0;">
+                <li>Open <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> and create / pick a project.</li>
+                <li>APIs &amp; Services → <b>Enable APIs</b> → search and enable <b>Google Drive API</b>.</li>
+                <li>OAuth consent screen → User type <b>External</b> → fill basic fields → add your Google account as a Test user.</li>
+                <li>Credentials → <b>Create Credentials</b> → <b>OAuth client ID</b> → Application type <b>Web application</b>.</li>
+                <li>In <b>Authorized redirect URIs</b>, paste the URL shown below as <b>Redirect URI</b>.</li>
+                <li>Copy the generated <b>Client ID</b> and paste it above.</li>
+              </ol>
+            </details>
+          </div>
+
+          <div class="ibd-field" style="margin-top:6px;">
+            <label class="ibd-label-mini" for="apiKeyDropbox">Dropbox — App Key</label>
+            <input id="apiKeyDropbox" type="text" class="ibd-input-mini" style="width:100%;" placeholder="abcdefghij1234" />
+            <details class="ibd-cloud-help" style="margin-top:4px;">
+              <summary style="cursor:pointer;font-size:11px;opacity:.85;">How to obtain →</summary>
+              <ol style="font-size:11px;line-height:1.5;margin:6px 0 0 16px;padding:0;">
+                <li>Open <a href="https://www.dropbox.com/developers/apps" target="_blank" rel="noopener">dropbox.com/developers/apps</a> and click <b>Create app</b>.</li>
+                <li>Choose <b>Scoped access</b> → <b>App folder</b> (or Full Dropbox) → name it <code>Photo-Grab</code>.</li>
+                <li>Permissions tab → enable <code>files.content.write</code> and submit.</li>
+                <li>Settings tab → add the URL shown below in <b>Redirect URIs</b>.</li>
+                <li>Copy <b>App key</b> and paste it above.</li>
+              </ol>
+            </details>
+          </div>
+
+          <div class="ibd-field" style="margin-top:6px;">
+            <label class="ibd-label-mini" for="apiKeyOnedrive">OneDrive — Application (client) ID</label>
+            <input id="apiKeyOnedrive" type="text" class="ibd-input-mini" style="width:100%;" placeholder="00000000-0000-0000-0000-000000000000" />
+            <details class="ibd-cloud-help" style="margin-top:4px;">
+              <summary style="cursor:pointer;font-size:11px;opacity:.85;">How to obtain →</summary>
+              <ol style="font-size:11px;line-height:1.5;margin:6px 0 0 16px;padding:0;">
+                <li>Open <a href="https://portal.azure.com/" target="_blank" rel="noopener">portal.azure.com</a> → <b>App registrations</b> → <b>New registration</b>.</li>
+                <li>Supported account types: <b>Personal Microsoft accounts</b> (or both).</li>
+                <li>Redirect URI: <b>Web</b> → paste the URL shown below.</li>
+                <li>After registration, API permissions → add <code>Files.ReadWrite</code> (Microsoft Graph, delegated).</li>
+                <li>Copy <b>Application (client) ID</b> and paste it above.</li>
+              </ol>
+            </details>
+          </div>
+
+          <div class="ibd-field" style="margin-top:8px;">
+            <label class="ibd-label-mini">Redirect URI (paste this in each provider's console)</label>
+            <input id="cloudRedirectUri" type="text" class="ibd-input-mini" style="width:100%;font-family:monospace;font-size:10px;" readonly />
+            <button id="copyRedirectBtn" class="ibd-btn ibd-btn-ghost" type="button" style="font-size:10px;padding:3px 7px;margin-top:4px;">Copy</button>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button id="saveApiKeysBtn" class="ibd-btn ibd-btn-primary" type="button" style="flex:1;font-size:11px;">Save API Keys</button>
+            <button id="clearCloudTokensBtn" class="ibd-btn ibd-btn-ghost" type="button" style="flex:1;font-size:11px;">Disconnect All</button>
+          </div>
         </div>
 
         <!-- SECTION: Shortcuts -->
@@ -464,7 +600,7 @@
             <label class="ibd-label" data-i18n="projectRepository">Project</label>
             <button id="githubBtn" class="ibd-btn ibd-btn-ghost w-100" type="button" data-i18n="openGitHub">Open GitHub Repository</button>
           </div>
-          <div class="ibd-subtitle text-center" style="margin-top:10px;">Version 1.8.3 · mst888</div>
+          <div class="ibd-subtitle text-center" style="margin-top:10px;">Version 1.8.4 · mst888</div>
         </div>
 
       </div><!-- /ibd-settings-content -->
